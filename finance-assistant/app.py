@@ -1,6 +1,8 @@
 import streamlit as st
 import io
 import base64
+import hashlib
+from audio_recorder_streamlit import audio_recorder
 from ai_agent import run_agent, transcribe_audio, text_to_speech
 from charts import (
     pie_chart_by_category,
@@ -63,6 +65,8 @@ if "chat_display" not in st.session_state:
     st.session_state.chat_display = []
 if "last_audio_b64" not in st.session_state:
     st.session_state.last_audio_b64 = None
+if "last_recording_hash" not in st.session_state:
+    st.session_state.last_recording_hash = None
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
@@ -207,7 +211,7 @@ with tab_voice:
 
         input_mode = st.radio(
             "Input mode",
-            ["🎤 Voice Upload", "⌨️ Type"],
+            ["🎤 Microphone", "⌨️ Type"],
             horizontal=True,
             label_visibility="collapsed",
         )
@@ -215,29 +219,38 @@ with tab_voice:
         user_text = None
         submitted = False
 
-        if input_mode == "🎤 Voice Upload":
-            uploaded_file = st.file_uploader(
-                "Upload audio (WAV, MP3, M4A, OGG, WEBM)",
-                type=["wav", "mp3", "m4a", "ogg", "webm", "flac"],
-                label_visibility="visible",
+        if input_mode == "🎤 Microphone":
+            st.markdown("Click the mic to **start** recording, click again to **stop**.")
+
+            audio_bytes = audio_recorder(
+                text="",
+                recording_color="#6C63FF",
+                neutral_color="#4A4A5A",
+                icon_name="microphone",
+                icon_size="2x",
+                pause_threshold=3.0,
+                energy_threshold=(-1.0, 1.0),
             )
-            st.caption("💡 Record on phone → upload here")
 
-            if uploaded_file:
-                st.audio(uploaded_file, format=uploaded_file.type)
-
-            if st.button("🔊 Transcribe & Ask", type="primary", use_container_width=True):
-                if uploaded_file:
-                    with st.spinner("Transcribing..."):
+            if audio_bytes:
+                # Only process if this is a new recording (avoid re-running on reruns)
+                recording_hash = hashlib.md5(audio_bytes).hexdigest()
+                if recording_hash != st.session_state.last_recording_hash:
+                    st.session_state.last_recording_hash = recording_hash
+                    st.audio(audio_bytes, format="audio/wav")
+                    with st.spinner("Transcribing your voice..."):
                         try:
-                            audio_bytes = uploaded_file.read()
-                            user_text = transcribe_audio(audio_bytes, filename=uploaded_file.name)
+                            user_text = transcribe_audio(audio_bytes, filename="recording.wav")
                             st.success(f"📝 **Heard:** *{user_text}*")
                             submitted = True
                         except Exception as e:
                             st.error(f"Transcription failed: {e}")
                 else:
-                    st.warning("Please upload an audio file first.")
+                    # Same recording shown again — just replay it
+                    st.audio(audio_bytes, format="audio/wav")
+                    st.caption("Recording already processed. Click the mic to record again.")
+            else:
+                st.caption("🔴 Press the mic button above to start speaking")
 
         else:
             with st.form("text_form", clear_on_submit=True):
