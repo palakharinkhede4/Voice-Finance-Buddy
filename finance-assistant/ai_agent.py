@@ -4,12 +4,39 @@ from datetime import datetime
 from openai import OpenAI
 from finance_functions import TOOLS, TOOL_MAP
 
-# ── OpenAI client via Replit AI Integrations ─────────────────────────────────
+# ── Auto-detect environment: Replit vs local ─────────────────────────────────
+#
+# On Replit:  AI_INTEGRATIONS_OPENAI_BASE_URL is set → use the proxy
+# Locally:    set OPENAI_API_KEY in .env → uses standard OpenAI API
 
-client = OpenAI(
-    api_key=os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY", "dummy"),
-    base_url=os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL"),
-)
+_replit_base_url = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
+_replit_api_key  = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
+_local_api_key   = os.environ.get("OPENAI_API_KEY")
+
+if _replit_base_url:
+    # Running on Replit — use the managed proxy
+    client = OpenAI(api_key=_replit_api_key or "dummy", base_url=_replit_base_url)
+    CHAT_MODEL       = "gpt-5.2"
+    TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
+else:
+    # Running locally — load .env if present, then use standard OpenAI
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        _local_api_key = os.environ.get("OPENAI_API_KEY")
+    except ImportError:
+        pass
+
+    if not _local_api_key:
+        raise EnvironmentError(
+            "OPENAI_API_KEY not found. Create a .env file in the finance-assistant/ "
+            "folder with: OPENAI_API_KEY=sk-your-key-here"
+        )
+
+    client = OpenAI(api_key=_local_api_key)
+    CHAT_MODEL       = "gpt-4o-mini"   # cost-effective; swap to gpt-4o for best quality
+    TRANSCRIBE_MODEL = "whisper-1"
+
 
 TODAY = datetime.now().strftime("%Y-%m-%d")
 
@@ -39,7 +66,7 @@ def transcribe_audio(audio_bytes: bytes, filename: str = "audio.wav") -> str:
     audio_file = io.BytesIO(audio_bytes)
     audio_file.name = filename
     response = client.audio.transcriptions.create(
-        model="gpt-4o-mini-transcribe",
+        model=TRANSCRIBE_MODEL,
         file=audio_file,
         response_format="json",
     )
@@ -67,24 +94,24 @@ def run_agent(user_message: str, conversation_history: list) -> tuple[str, list]
     messages.extend(conversation_history)
     messages.append({"role": "user", "content": user_message})
 
-    # Agent loop: keep calling until no more tool calls
+    # Agent loop — keeps running until no more tool calls are requested
     while True:
         response = client.chat.completions.create(
-            model="gpt-5.2",
+            model=CHAT_MODEL,
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",
-            max_completion_tokens=1024,
+            max_tokens=1024,
         )
 
         message = response.choices[0].message
         messages.append(message)
 
-        # No tool calls → final response
+        # No tool calls → final answer ready
         if not message.tool_calls:
             break
 
-        # Process all tool calls (handles multi-intent)
+        # Execute all requested tools (handles multi-intent in one pass)
         for tool_call in message.tool_calls:
             fn_name = tool_call.function.name
             fn_args = json.loads(tool_call.function.arguments)
@@ -102,13 +129,11 @@ def run_agent(user_message: str, conversation_history: list) -> tuple[str, list]
 
     assistant_reply = message.content or ""
 
-    # Update conversation history (exclude system prompt)
+    # Maintain rolling history — keep last 20 turns to avoid token overflow
     updated_history = conversation_history + [
         {"role": "user", "content": user_message},
         {"role": "assistant", "content": assistant_reply},
     ]
-
-    # Keep last 20 turns to avoid token overflow
     if len(updated_history) > 40:
         updated_history = updated_history[-40:]
 
