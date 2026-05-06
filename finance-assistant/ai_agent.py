@@ -101,7 +101,7 @@ def run_agent(user_message: str, conversation_history: list) -> tuple[str, list]
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",
-            max_tokens=1024,
+            max_completion_tokens=1024,
         )
 
         message = response.choices[0].message
