@@ -1,0 +1,162 @@
+2. Add Agent Router
+
+Create an intelligent router that chooses agents based on user intent.
+
+Example:
+
+investment queries -> investment_agent
+budget queries -> budget_agent
+tax queries -> tax_agent
+expense queries -> expense_agent
+
+Router should execute the selected agent and return the result.
+
+3. Add Prompt Injection Protection
+
+Create a security layer before every LLM call.
+
+Detect:
+
+ignore previous instructions
+reveal system prompt
+show hidden prompt
+developer message
+tool abuse attempts
+
+If detected:
+
+return "Request blocked for security reasons."
+
+All user messages must pass through this layer before reaching the LLM.
+
+4. Add Long-Term Memory
+
+Store:
+
+user goals
+budget preferences
+investment preferences
+conversation summaries
+
+Use SQLite.
+
+Create memory retrieval before every LLM call.
+
+5. Replace Mock Finance Data
+
+Current hardcoded accounts and transactions should be moved into SQLite.
+
+Create:
+
+users
+accounts
+transactions
+goals
+conversation_memory
+
+Populate sample data automatically on first startup.
+
+6. Add RAG
+
+Implement retrieval augmented generation.
+
+Use:
+
+FAISS
+sentence-transformers
+
+Create:
+
+/data/docs
+
+for financial PDFs and documents.
+
+Pipeline:
+
+Question
+→ Retrieve documents
+→ Add context
+→ LLM
+→ Response
+7. Add Financial Knowledge Base
+
+Ingest documents from:
+
+Tax guides
+Mutual fund guides
+Investment basics
+Retirement planning
+
+Store embeddings in FAISS.
+
+8. Add Voice Activity Detection
+
+Use:
+
+silero-vad
+
+Process only speech segments.
+
+Reduce unnecessary transcription calls.
+
+9. Add Streaming Responses
+
+Implement:
+
+Streaming STT
+Streaming LLM output
+Streaming TTS
+
+User should see response appearing in real time.
+
+10. Add Logging
+
+Create:
+
+logs/
+
+Track:
+
+agent selected
+tool calls
+latency
+errors
+security violations
+11. Environment Variables
+
+Move all secrets to:
+
+.env
+
+No hardcoded API keys.
+
+12. Deployment Preparation
+
+Generate:
+
+requirements.txt
+Dockerfile
+.gitignore
+README.md
+
+Include deployment instructions for:
+
+Streamlit Cloud
+Render
+Railway
+13. GitHub Automation
+
+Commit all changes.
+
+Create meaningful commit messages.
+
+Push all changes to the connected GitHub repository.
+
+Important Requirements
+Do not remove existing features.
+Keep the current UI working.
+Refactor incrementally.
+Ensure app runs after every major change.
+Fix any import or dependency issues.
+Run tests before final commit.
+Push final working version to GitHub.
