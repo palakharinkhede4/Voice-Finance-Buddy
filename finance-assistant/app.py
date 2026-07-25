@@ -281,7 +281,7 @@ with tab_voice:
                 neutral_color="#4A4A5A",
                 icon_name="microphone",
                 icon_size="2x",
-                pause_threshold=3.0,
+                pause_threshold=10.0,
                 energy_threshold=(-1.0, 1.0),
             )
             if audio_bytes:
