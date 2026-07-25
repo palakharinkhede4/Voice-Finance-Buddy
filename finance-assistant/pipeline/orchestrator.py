@@ -400,4 +400,7 @@ class FinancePipeline:
         s = self.settings
         if s.openai_base_url:
             return OpenAI(api_key=s.openai_api_key, base_url=s.openai_base_url)
+        if s.openai_api_key == "free-oss":
+            return OpenAI(api_key="ollama", base_url=f"{s.ollama_url}/v1")
         return OpenAI(api_key=s.openai_api_key)
+

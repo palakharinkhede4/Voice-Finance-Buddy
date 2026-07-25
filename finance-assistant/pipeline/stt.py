@@ -108,12 +108,20 @@ class STTEngine:
         return " ".join(seg.text.strip() for seg in segments).strip()
 
     def _openai_transcribe(self, audio_bytes: bytes, language: str) -> str:
-        buf       = io.BytesIO(audio_bytes)
-        buf.name  = "recording.wav"
-        resp = self._client.audio.transcriptions.create(
-            model=self._openai_model,
-            file=buf,
-            response_format="json",
-            language=language or "hi",
-        )
-        return resp.text.strip()
+        if self._client.api_key in ("free-oss", "dummy", ""):
+            _log.warning("No STT API key provided and faster-whisper unavailable.")
+            return ""
+        try:
+            buf       = io.BytesIO(audio_bytes)
+            buf.name  = "recording.wav"
+            resp = self._client.audio.transcriptions.create(
+                model=self._openai_model,
+                file=buf,
+                response_format="json",
+                language=language or "hi",
+            )
+            return resp.text.strip()
+        except Exception as err:
+            _log.error(f"STT API error: {err}")
+            return ""
+

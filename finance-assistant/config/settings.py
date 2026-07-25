@@ -54,31 +54,45 @@ class Settings:
 
 
 def get_settings() -> Settings:
-    # ── Replit AI Integrations (auto-injected env vars) ───────────────────────
+    # Load .env if present
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
     replit_base_url = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
     replit_api_key  = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
 
-    if replit_base_url:
+    groq_key   = os.environ.get("GROQ_API_KEY")
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    openai_key = os.environ.get("OPENAI_API_KEY")
+
+    if groq_key:
+        api_key          = groq_key
+        base_url         = "https://api.groq.com/openai/v1"
+        chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "llama-3.3-70b-versatile")
+        transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-large-v3-turbo")
+    elif gemini_key:
+        api_key          = gemini_key
+        base_url         = "https://generativelanguage.googleapis.com/v1beta/openai/"
+        chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "gemini-2.0-flash")
+        transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-1")
+    elif replit_base_url:
         api_key          = replit_api_key or "dummy"
         base_url         = replit_base_url
         chat_model       = "gpt-4o-mini"
         transcribe_model = "gpt-4o-mini-transcribe"
-    else:
-        # Local development — load .env
-        try:
-            from dotenv import load_dotenv
-            load_dotenv()
-        except ImportError:
-            pass
-        local_key = os.environ.get("OPENAI_API_KEY")
-        if not local_key:
-            raise EnvironmentError(
-                "OPENAI_API_KEY not found. "
-                "Add it to a .env file in finance-assistant/ or set the env var."
-            )
-        api_key          = local_key
+    elif openai_key:
+        api_key          = openai_key
         base_url         = None
         chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "gpt-4o-mini")
+        transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-1")
+    else:
+        # 100% Free / OSS mode — Ollama local or offline mode (no key required)
+        api_key          = "free-oss"
+        base_url         = None
+        chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "llama3.2")
         transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-1")
 
     return Settings(
@@ -87,7 +101,7 @@ def get_settings() -> Settings:
 
         chat_model       = chat_model,
         transcribe_model = transcribe_model,
-        tts_model        = os.environ.get("ARTHBOT_TTS_MODEL",  "tts-1"),
+        tts_model        = os.environ.get("ARTHBOT_TTS_MODEL",  "gtts"),
         tts_voice        = os.environ.get("ARTHBOT_TTS_VOICE",  "alloy"),
 
         # Pipeline: STT
@@ -98,8 +112,8 @@ def get_settings() -> Settings:
         ollama_url  = os.environ.get("ARTHBOT_OLLAMA_URL",  "http://localhost:11434"),
 
         # Generation
-        max_completion_tokens = int(os.environ.get("ARTHBOT_MAX_TOKENS",   "1024")),
-        max_history_turns     = int(os.environ.get("ARTHBOT_HISTORY_TURNS", "20")),
+        max_completion_tokens = int(os.environ.get("ARTHBOT_MAX_TOKENS",   "512")),
+        max_history_turns     = int(os.environ.get("ARTHBOT_HISTORY_TURNS", "10")),
         max_input_length      = int(os.environ.get("ARTHBOT_MAX_INPUT",    "2000")),
 
         # Metadata
@@ -108,3 +122,4 @@ def get_settings() -> Settings:
         user_name      = "Rahul Sharma",
         account_number = "XXXX-XXXX-1234",
     )
+

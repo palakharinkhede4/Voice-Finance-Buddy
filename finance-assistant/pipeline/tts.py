@@ -1,14 +1,15 @@
 """
 Text-to-Speech — Stage 7 (final) of the pipeline.
 
-Backend: OpenAI TTS (tts-1 or tts-1-hd).
-Voice: alloy | echo | fable | onyx | nova | shimmer
-
-Future: support local TTS via Coqui-TTS or Piper when torch is available.
+Backends:
+  1. gTTS (Google Text-to-Speech) — 100% FREE, no API key required.
+  2. OpenAI TTS (tts-1 or tts-1-hd) — fallback if OpenAI key is present.
 """
 from __future__ import annotations
 
+import io
 import time
+import tempfile
 from openai import OpenAI
 from logs.logger import get_logger
 
@@ -17,14 +18,7 @@ _log = get_logger("tts")
 
 class TTSEngine:
     """
-    Converts text → MP3 audio bytes using OpenAI TTS.
-
-    Parameters
-    ----------
-    model: "tts-1" (fast/cheap) or "tts-1-hd" (higher quality).
-    voice: One of alloy | echo | fable | onyx | nova | shimmer.
-           'alloy' works well for Hinglish/Hindi content.
-    speed: 0.25-4.0. 1.0 = normal.
+    Converts text → MP3 audio bytes using gTTS (free) or OpenAI TTS.
     """
 
     VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
@@ -32,7 +26,7 @@ class TTSEngine:
     def __init__(
         self,
         client:  OpenAI,
-        model:   str   = "tts-1",
+        model:   str   = "gtts",
         voice:   str   = "alloy",
         speed:   float = 1.0,
     ):
@@ -49,22 +43,43 @@ class TTSEngine:
         """
         if not text or not text.strip():
             return b""
-        # Trim text for TTS — cap at 4096 chars (OpenAI limit)
         text = text.strip()[:4_096]
         t0   = time.perf_counter()
+
+        # Try gTTS (Free Google TTS) first if model is gtts or if OpenAI fails
+        if self._model == "gtts" or self._client.api_key in ("free-oss", "dummy", ""):
+            audio_bytes = self._gtts_synthesize(text)
+            if audio_bytes:
+                ms = (time.perf_counter() - t0) * 1_000
+                _log.info(f"TTS(gtts) | chars={len(text)} | latency={ms:.0f}ms")
+                return audio_bytes
+
+        # OpenAI TTS fallback
         try:
             resp = self._client.audio.speech.create(
-                model=self._model,
+                model=self._model if self._model != "gtts" else "tts-1",
                 voice=self._voice,
                 input=text,
                 response_format="mp3",
                 speed=self._speed,
             )
             ms = (time.perf_counter() - t0) * 1_000
-            _log.info(f"TTS | chars={len(text)} | latency={ms:.0f}ms")
+            _log.info(f"TTS(openai) | chars={len(text)} | latency={ms:.0f}ms")
             return resp.content
         except Exception as exc:
-            _log.error(f"TTS error: {exc}")
+            _log.warning(f"OpenAI TTS error ({exc}) — falling back to gTTS")
+            return self._gtts_synthesize(text)
+
+    def _gtts_synthesize(self, text: str) -> bytes:
+        try:
+            from gtts import gTTS
+            tts = gTTS(text=text, lang="en", tld="co.in")
+            fp = io.BytesIO()
+            tts.write_to_fp(fp)
+            fp.seek(0)
+            return fp.read()
+        except Exception as err:
+            _log.error(f"gTTS error: {err}")
             return b""
 
     @property
@@ -76,3 +91,4 @@ class TTSEngine:
         if v in self.VOICES:
             self._voice = v
             _log.info(f"TTS voice changed → {v}")
+
