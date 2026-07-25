@@ -13,7 +13,7 @@ class Settings:
     # API Key & Provider Endpoint
     openai_api_key:  str
     openai_base_url: Optional[str]
-    provider_name:   str = "Groq"
+    provider_name:   str
 
     # Models
     chat_model:       str
