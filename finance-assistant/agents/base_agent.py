@@ -60,11 +60,13 @@ class BaseAgent:
 
             fallbacks = []
 
-            # 1. Gemini models (free-tier supported)
+            # 1. Gemini models (free-tier supported with 15 RPM & 250k token limits)
             gemini_key = _get_gemini_key()
             if gemini_key:
-                fallbacks.append(("gemini", "gemini-1.5-flash"))
                 fallbacks.append(("gemini", "gemini-1.5-flash-8b"))
+                fallbacks.append(("gemini", "gemini-1.5-flash"))
+                fallbacks.append(("gemini", "gemini-2.0-flash-lite"))
+                fallbacks.append(("gemini", "gemini-2.0-flash-lite-preview-02-05"))
                 fallbacks.append(("gemini", "gemini-2.0-flash"))
 
             # 2. Groq models (high-capacity buckets)
