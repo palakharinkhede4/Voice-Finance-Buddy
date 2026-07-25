@@ -267,49 +267,55 @@ with left_col:
 
     # ── Microphone ────────────────────────────────────────────────────────────
     if input_mode == "🎤 Microphone":
-        st.markdown(
-            """
-            <div style="text-align: center; padding: 10px 0 2px 0;">
-                <div style="font-size: 0.9rem; color: #b0b8d0;">
-                    Click the microphone below to <b>start recording</b>. Click again when done.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        audio_bytes = audio_recorder(
-            text="",
-            recording_color="#FF4B4B",
-            neutral_color="#6C63FF",
-            icon_name="microphone",
-            icon_size="3x",
-            pause_threshold=10.0,
-            energy_threshold=(-1.0, 1.0),
-        )
-
-        if audio_bytes and len(audio_bytes) > 2000:
-            recording_hash = hashlib.md5(audio_bytes).hexdigest()
-            if recording_hash != st.session_state.last_recording_hash:
-                st.session_state.last_recording_hash = recording_hash
-                st.markdown("<div style='text-align:center; margin-top:8px;'><span style='background:rgba(88,214,141,0.2); color:#58D68D; border:1px solid #58D68D; padding:5px 16px; border-radius:20px; font-size:0.8rem; font-weight:600;'>✅ Audio Recorded — Processing…</span></div>", unsafe_allow_html=True)
-                st.audio(audio_bytes, format="audio/wav")
-                is_audio  = True
-                submitted = True
-            else:
-                st.audio(audio_bytes, format="audio/wav")
-                st.caption("Already processed — click mic to record again.")
+        if st.session_state.get("last_audio_bytes"):
+            st.info("🔊 Voice response is currently playing. Click **⏹️ Stop Audio** below to start a new voice recording.")
+            if st.button("⏹️ Stop Audio & Record", **_cw()):
+                st.session_state.last_audio_bytes = None
+                st.rerun()
         else:
             st.markdown(
                 """
-                <div style="text-align: center; margin-top: 10px;">
-                    <span style="background: rgba(108,99,255,0.15); color: #a09aff; border: 1px solid rgba(108,99,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
-                        🔴 Ready to Record
-                    </span>
+                <div style="text-align: center; padding: 10px 0 2px 0;">
+                    <div style="font-size: 0.9rem; color: #b0b8d0;">
+                        Click the microphone below to <b>start recording</b>. Click again when done.
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+
+            audio_bytes = audio_recorder(
+                text="",
+                recording_color="#FF4B4B",
+                neutral_color="#6C63FF",
+                icon_name="microphone",
+                icon_size="3x",
+                pause_threshold=10.0,
+                energy_threshold=(-1.0, 1.0),
+            )
+
+            if audio_bytes and len(audio_bytes) > 2000:
+                recording_hash = hashlib.md5(audio_bytes).hexdigest()
+                if recording_hash != st.session_state.last_recording_hash:
+                    st.session_state.last_recording_hash = recording_hash
+                    st.markdown("<div style='text-align:center; margin-top:8px;'><span style='background:rgba(88,214,141,0.2); color:#58D68D; border:1px solid #58D68D; padding:5px 16px; border-radius:20px; font-size:0.8rem; font-weight:600;'>✅ Audio Recorded — Processing…</span></div>", unsafe_allow_html=True)
+                    st.audio(audio_bytes, format="audio/wav")
+                    is_audio  = True
+                    submitted = True
+                else:
+                    st.audio(audio_bytes, format="audio/wav")
+                    st.caption("Already processed — click mic to record again.")
+            else:
+                st.markdown(
+                    """
+                    <div style="text-align: center; margin-top: 10px;">
+                        <span style="background: rgba(108,99,255,0.15); color: #a09aff; border: 1px solid rgba(108,99,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
+                            🔴 Ready to Record
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
     # ── Text Input ────────────────────────────────────────────────────────────
     else:
@@ -390,14 +396,20 @@ with left_col:
                 _play_tts(result)
                 st.session_state.last_pipeline_result = result
 
-    # ── TTS playback with Autoplay ────────────────────────────────────────────
+    # ── TTS playback with Autoplay & Stop Button ──────────────────────────────
     if st.session_state.get("last_audio_bytes"):
         st.markdown("#### 🔊 Voice Response")
-        st.audio(
-            st.session_state.last_audio_bytes,
-            format="audio/mp3",
-            autoplay=True,
-        )
+        col_aud, col_stop = st.columns([3, 1])
+        with col_aud:
+            st.audio(
+                st.session_state.last_audio_bytes,
+                format="audio/mp3",
+                autoplay=True,
+            )
+        with col_stop:
+            if st.button("⏹️ Stop Audio", **_cw()):
+                st.session_state.last_audio_bytes = None
+                st.rerun()
 
     # ── Pipeline trace ────────────────────────────────────────────────────────
     if st.session_state.last_pipeline_result:
