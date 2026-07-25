@@ -49,7 +49,7 @@ class BaseAgent:
                     messages=messages,
                     tools=self.TOOLS,
                     tool_choice="auto",
-                    max_completion_tokens=self.settings.max_completion_tokens,
+                    max_tokens=self.settings.max_completion_tokens,
                 )
                 msg = resp.choices[0].message
                 messages.append(msg)
@@ -94,7 +94,7 @@ class BaseAgent:
                 tools=self.TOOLS,
                 tool_choice="auto",
                 stream=True,
-                max_completion_tokens=self.settings.max_completion_tokens,
+                max_tokens=self.settings.max_completion_tokens,
             )
 
             content:     str            = ""

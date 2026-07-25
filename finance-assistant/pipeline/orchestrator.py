@@ -212,7 +212,7 @@ class FinancePipeline:
                     "role":    "user",
                     "content": _CLASSIFY_PROMPT.format(text=text[:500]),
                 }],
-                max_completion_tokens=5,
+                max_tokens=5,
                 temperature=0,
             )
             intent = resp.choices[0].message.content.strip().lower().split()[0]

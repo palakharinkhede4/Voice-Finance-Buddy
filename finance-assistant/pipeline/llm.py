@@ -97,7 +97,7 @@ class LLMEngine:
             model=model,
             messages=messages,
             stream=stream,
-            max_completion_tokens=self._max_tokens,
+            max_tokens=self._max_tokens,
         )
         if tools:
             kwargs["tools"]       = tools
@@ -125,7 +125,7 @@ class LLMEngine:
             model=model,
             messages=messages,
             stream=True,
-            max_completion_tokens=self._max_tokens,
+            max_tokens=self._max_tokens,
         )
         if tools:
             kwargs["tools"]       = tools

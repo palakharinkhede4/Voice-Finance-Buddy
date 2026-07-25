@@ -123,7 +123,7 @@ class PlannerAgent:
                     "content": _PLAN_PROMPT.format(query=query),
                 }],
                 temperature=0,
-                max_completion_tokens=512,
+                max_tokens=512,
             )
             raw  = resp.choices[0].message.content or "[]"
             plan = json.loads(raw)
@@ -177,7 +177,7 @@ class PlannerAgent:
             resp = self.client.chat.completions.create(
                 model=self.settings.chat_model,
                 messages=[{"role": "user", "content": prompt}],
-                max_completion_tokens=self.settings.max_completion_tokens,
+                max_tokens=self.settings.max_completion_tokens,
             )
             return resp.choices[0].message.content or ""
         except Exception as exc:
@@ -199,7 +199,7 @@ class PlannerAgent:
                 model=self.settings.chat_model,
                 messages=[{"role": "user", "content": prompt}],
                 stream=True,
-                max_completion_tokens=self.settings.max_completion_tokens,
+                max_tokens=self.settings.max_completion_tokens,
             )
             for chunk in stream:
                 delta = chunk.choices[0].delta
