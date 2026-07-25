@@ -7,7 +7,9 @@ import hashlib
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", message=".*use_container_width.*")
+warnings.filterwarnings("ignore", message=".*Sampling rate.*")
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
@@ -287,7 +289,7 @@ with left_col:
             energy_threshold=(-1.0, 1.0),
         )
 
-        if audio_bytes:
+        if audio_bytes and len(audio_bytes) > 2000:
             recording_hash = hashlib.md5(audio_bytes).hexdigest()
             if recording_hash != st.session_state.last_recording_hash:
                 st.session_state.last_recording_hash = recording_hash
