@@ -98,9 +98,10 @@ class STTEngine:
 
     def _fw_transcribe(self, audio_bytes: bytes, language: str) -> str:
         buf = io.BytesIO(audio_bytes)
+        lang_code = language.strip() if (language and language.strip()) else None
         segments, _ = self._fw_model.transcribe(
             buf,
-            language=language,
+            language=lang_code,
             beam_size=5,
             vad_filter=False,           # We already ran our own VAD
             condition_on_previous_text=True,
@@ -108,8 +109,9 @@ class STTEngine:
         return " ".join(seg.text.strip() for seg in segments).strip()
 
     def _openai_transcribe(self, audio_bytes: bytes, language: str) -> str:
-        if self._client.api_key in ("free-oss", "dummy", ""):
-            _log.warning("No STT API key provided and faster-whisper unavailable.")
+        key = (getattr(self._client, "api_key", "") or "").lower().strip()
+        if not key or key in ("free-oss", "dummy", "your_key", "your_api_key", "none"):
+            _log.warning("No valid STT API key provided and faster-whisper unavailable.")
             return ""
         try:
             buf = io.BytesIO(audio_bytes)
