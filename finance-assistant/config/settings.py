@@ -108,9 +108,9 @@ def get_settings() -> Settings:
     if gemini_key:
         api_key          = gemini_key
         base_url         = "https://generativelanguage.googleapis.com/v1beta/openai/"
-        chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "gemini-1.5-flash-8b"
+        chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "gemini-3.5-flash"
         transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
-        provider_name    = "Gemini (Flash Lite)"
+        provider_name    = "Gemini (3.5 Flash)"
     elif groq_key:
         api_key          = groq_key
         base_url         = "https://api.groq.com/openai/v1"
