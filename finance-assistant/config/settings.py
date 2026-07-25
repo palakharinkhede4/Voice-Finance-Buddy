@@ -13,6 +13,7 @@ class Settings:
     # API Key & Provider Endpoint
     openai_api_key:  str
     openai_base_url: Optional[str]
+    provider_name:   str = "Groq"
 
     # Models
     chat_model:       str
@@ -103,31 +104,37 @@ def get_settings() -> Settings:
     gemini_key = _get_secret_or_env("GEMINI_API_KEY")
     openai_key = _get_secret_or_env("OPENAI_API_KEY")
 
+    provider_name = "None"
     if groq_key:
         api_key          = groq_key
         base_url         = "https://api.groq.com/openai/v1"
         chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "llama-3.3-70b-versatile"
         transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-large-v3-turbo"
+        provider_name    = "Groq"
     elif gemini_key:
         api_key          = gemini_key
         base_url         = "https://generativelanguage.googleapis.com/v1beta/openai/"
         chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "gemini-2.0-flash"
         transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
+        provider_name    = "Gemini"
     elif openai_key:
         api_key          = openai_key
         base_url         = None
         chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "gpt-4o-mini"
         transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
+        provider_name    = "OpenAI"
     else:
         # 100% Free / OSS mode — Ollama local or offline mode (no key required)
         api_key          = "free-oss"
         base_url         = "http://localhost:11434/v1"
         chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "llama3.2"
         transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
+        provider_name    = "None (Missing Key)"
 
     return Settings(
         openai_api_key   = api_key,
         openai_base_url  = base_url,
+        provider_name    = provider_name,
 
         chat_model       = chat_model,
         transcribe_model = transcribe_model,
