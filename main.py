@@ -1,5 +1,5 @@
 def main():
-    print("Hello from repl-nix-workspace!")
+    print("Hello from voice-finance-buddy!")
 
 
 if __name__ == "__main__":

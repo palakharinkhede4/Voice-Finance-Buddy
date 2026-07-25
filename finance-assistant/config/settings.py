@@ -1,6 +1,6 @@
 """
 Centralized configuration for ArthBot.
-Auto-detects Replit AI Integrations vs local OpenAI key.
+Auto-detects API provider (Groq, Gemini, OpenAI) vs local model.
 Pipeline backend settings (faster-whisper, Ollama) read from env vars.
 """
 import os
@@ -10,7 +10,7 @@ from typing import Optional
 
 @dataclass
 class Settings:
-    # OpenAI / Replit AI Integrations
+    # API Key & Provider Endpoint
     openai_api_key:  str
     openai_base_url: Optional[str]
 
@@ -54,15 +54,16 @@ class Settings:
 
 
 def get_settings() -> Settings:
-    # Load .env if present
+    # Load .env if present (check current dir and settings dir)
     try:
         from dotenv import load_dotenv
         load_dotenv()
+        env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+        if os.path.exists(env_path):
+            load_dotenv(env_path)
     except ImportError:
         pass
 
-    replit_base_url = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
-    replit_api_key  = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
 
     groq_key   = os.environ.get("GROQ_API_KEY")
     gemini_key = os.environ.get("GEMINI_API_KEY")
@@ -78,11 +79,6 @@ def get_settings() -> Settings:
         base_url         = "https://generativelanguage.googleapis.com/v1beta/openai/"
         chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "gemini-2.0-flash")
         transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-1")
-    elif replit_base_url:
-        api_key          = replit_api_key or "dummy"
-        base_url         = replit_base_url
-        chat_model       = "gpt-4o-mini"
-        transcribe_model = "gpt-4o-mini-transcribe"
     elif openai_key:
         api_key          = openai_key
         base_url         = None

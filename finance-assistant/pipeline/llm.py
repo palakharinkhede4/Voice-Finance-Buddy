@@ -3,10 +3,10 @@ LLM Backend Abstraction — Stage 6 of the pipeline.
 
 Backends (auto-detected at startup):
   1. Ollama     — local model server (http://localhost:11434)
-  2. OpenAI     — cloud API via Replit AI Integrations or direct key
+  2. OpenAI     — cloud API via API key
 
 Auto-detection: on init, we probe Ollama. If it responds and has at
-least one model loaded, we use it; otherwise we fall back to OpenAI.
+least one model loaded, we use it; otherwise we fall back to OpenAI / cloud provider.
 
 Users can force a backend via settings.llm_backend = "openai" | "ollama".
 """

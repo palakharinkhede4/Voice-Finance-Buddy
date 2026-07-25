@@ -187,7 +187,7 @@ with st.sidebar:
 **Tax:** *"Income tax on ₹9L old vs new?"*
 **Market:** *"Nifty aaj kahan hai?"*
 """)
-    st.caption("Powered by OpenAI · Replit AI Integrations")
+    st.caption("Powered by OpenAI / LLM Providers")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 

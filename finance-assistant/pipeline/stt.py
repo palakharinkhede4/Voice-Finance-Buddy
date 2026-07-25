@@ -3,7 +3,7 @@ Speech-to-Text — Stage 2 of the pipeline.
 
 Backends (tried in order):
   1. faster-whisper  — local model, no API cost, runs on CPU with int8 quantisation
-  2. OpenAI Whisper  — API call via Replit AI Integrations or direct OpenAI key
+  2. OpenAI Whisper  — cloud API call via API key
 
 The backend is selected once at startup and logged. Callers always use
 STTEngine.transcribe() — the backend is transparent.
