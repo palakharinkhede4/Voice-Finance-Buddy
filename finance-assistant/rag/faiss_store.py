@@ -42,7 +42,8 @@ class FAISSVectorStore:
         _log.info(f"Loading SentenceTransformer: {model_name} …")
         t0 = time.perf_counter()
         self._encoder  = SentenceTransformer(model_name)
-        self._dim      = self._encoder.get_sentence_embedding_dimension()
+        get_dim = getattr(self._encoder, "get_embedding_dimension", getattr(self._encoder, "get_sentence_embedding_dimension", None))
+        self._dim      = get_dim()
         ms = (time.perf_counter() - t0) * 1_000
         _log.info(f"SentenceTransformer loaded | dim={self._dim} | {ms:.0f}ms")
 

@@ -4,6 +4,11 @@ Main Streamlit UI using the full 7-stage FinancePipeline.
 """
 import base64
 import hashlib
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", message=".*use_container_width.*")
+
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
