@@ -141,6 +141,50 @@ def render_pipeline(result: PipelineResult) -> None:
     )
 
 
+# ── Architecture Dialog ───────────────────────────────────────────────────────
+
+@st.dialog("🏗️ ArthBot Technical Architecture & Pipeline", width="large")
+def show_architecture_dialog():
+    st.markdown("### 🔄 7-Stage Voice-AI Pipeline Flow")
+    st.markdown("""
+```mermaid
+graph TD
+    A[🎤 Audio / Text Input] --> B[1. VAD: Silero ONNX]
+    B --> C[2. STT: Whisper Speech-to-Text]
+    C --> D[3. Security: PromptGuard & Sanitizer]
+    D --> E[4. Router: Agent Classifier]
+    E --> F[5. RAG: FAISS + Sentence-Transformers]
+    F --> G[6. Specialist Agents & LLM: Groq / Gemini]
+    G --> H[7. TTS: gTTS Audio Synthesizer]
+    H --> I[🔊 Audio Response]
+```
+""")
+    st.divider()
+    
+    st.markdown("### ⚡ Active Runtime Backends")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"📡 **VAD:** `{pipeline.vad_backend}`")
+        st.markdown(f"🎤 **STT:** `{pipeline.stt.backend.value}`")
+        st.markdown(f"🧭 **Router:** `LLM Intent Classifier`")
+    with col2:
+        st.markdown(f"📚 **RAG:** `{RAG_BACKEND}`")
+        st.markdown(f"🤖 **LLM:** `{pipeline.llm.backend.value}`")
+        st.markdown(f"🔊 **TTS:** `gTTS · {pipeline.tts.voice}`")
+
+    st.divider()
+    st.markdown("### 🤖 Autonomous Specialist Agents")
+    st.markdown("""
+| Agent | Domain & Focus | Capabilities |
+| :--- | :--- | :--- |
+| 💳 **Expense** | Account & Transactions | Balance lookup, Category analytics, Recent transactions |
+| 📊 **Budget** | Budgeting & Limits | Overspend detection, Savings rate coaching |
+| 📈 **Investment** | Wealth & Market Data | SIP, EMI, FD calculators, Live NSE/BSE & MF APIs |
+| 🧾 **Tax** | Income Tax & Exemptions | FY24-25 Old vs New Regime, 80C/80D/24(b) calculations |
+| 🗺️ **Planner** | Multi-Domain Advice | Synthesizes comprehensive advice across all agents |
+""")
+
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
@@ -153,36 +197,21 @@ with st.sidebar:
     st.caption(f"Account · {db.user.account_number}")
     st.divider()
 
-    st.markdown("**🔧 Active Pipeline Backends**")
-    st.markdown(f"- 📡 **VAD:** `{pipeline.vad_backend}`")
-    st.markdown(f"- 🎤 **STT:** `{pipeline.stt.backend.value}`")
-    st.markdown(f"- 🧭 **Router:** `LLM intent classifier`")
-    st.markdown(f"- 📚 **RAG:** `{RAG_BACKEND[:30]}`")
-    st.markdown(f"- 🤖 **LLM:** `{pipeline.llm.backend.value}`")
-    st.markdown(f"- 🔊 **TTS:** `OpenAI TTS · {pipeline.tts.voice}`")
+    if st.button("🏗️ Technical Architecture", use_container_width=True):
+        show_architecture_dialog()
+
     st.divider()
 
-    st.markdown("**🤖 Specialist Agents**")
-    st.markdown("""
-- 💳 **Expense** — balance, transactions, spending
-- 🗺️ **Planner** — multi-domain complex queries
-- 📊 **Budget** — alerts, savings coaching
-- 📈 **Investment** — SIP, EMI, FD, markets
-- 🧾 **Tax** — income tax, 80C, regimes
-""")
-    st.divider()
+    with st.expander("⚙️ Settings", expanded=False):
+        st.session_state.streaming_enabled = st.toggle(
+            "Stream LLM responses", value=st.session_state.streaming_enabled,
+            help="Show response token-by-token as it's generated"
+        )
+        st.session_state.tts_enabled = st.toggle(
+            "Voice responses (TTS)", value=st.session_state.tts_enabled,
+        )
 
-    st.markdown("**⚙️ Settings**")
-    st.session_state.streaming_enabled = st.toggle(
-        "Stream LLM responses", value=st.session_state.streaming_enabled,
-        help="Show response token-by-token as it's generated"
-    )
-    st.session_state.tts_enabled = st.toggle(
-        "Voice responses (TTS)", value=st.session_state.tts_enabled,
-    )
-    st.divider()
-
-    with st.expander("💡 Try asking…"):
+    with st.expander("💡 Try asking…", expanded=False):
         st.markdown("""
 **Balance:** *"Mera balance kitna hai?"*
 **Spending:** *"इस महीने कितना खर्चा हुआ?"*
