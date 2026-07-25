@@ -9,7 +9,25 @@ from openai import OpenAI
 from config.settings import Settings
 from logs.logger import get_logger, LatencyTimer
 
+import os
+
 _log = get_logger("agents")
+
+
+def _get_gemini_key() -> str | None:
+    val = os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_KEY") or os.environ.get("GEMINI")
+    if val and isinstance(val, str) and val.strip() and val.strip().lower() not in ("dummy", "your_key", "none"):
+        return val.strip().strip("'\"")
+    try:
+        import streamlit as st
+        for k in ("GEMINI_API_KEY", "GEMINI_KEY", "GEMINI", "gemini_api_key", "gemini"):
+            if k in st.secrets:
+                v = st.secrets[k]
+                if isinstance(v, str) and v.strip() and v.strip().lower() not in ("dummy", "your_key", "none"):
+                    return v.strip().strip("'\"")
+    except Exception:
+        pass
+    return None
 
 
 class BaseAgent:
@@ -32,6 +50,50 @@ class BaseAgent:
 
     # ── Standard (non-streaming) ──────────────────────────────────────────────
 
+    def _create_completion_with_fallback(self, messages: list, tools: list = None, tool_choice: str = "auto"):
+        kwargs = {
+            "model": self.settings.chat_model,
+            "messages": messages,
+            "max_tokens": self.settings.max_completion_tokens,
+        }
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = tool_choice
+
+        try:
+            return self.client.chat.completions.create(**kwargs)
+        except Exception as exc:
+            err_str = str(exc).lower()
+            if any(w in err_str for w in ("429", "rate limit", "rate_limit", "tokens", "exceeded")):
+                _log.warning(f"Primary LLM rate limited (429). Attempting automatic fallback sequence...")
+
+                # Fallback 1: Groq llama-3.1-8b-instant (separate 500,000 TPD bucket)
+                if self.settings.chat_model != "llama-3.1-8b-instant" and "groq" in str(getattr(self.client, "base_url", "")).lower():
+                    try:
+                        _log.info("Fallback Tier 1: Trying Groq llama-3.1-8b-instant...")
+                        kwargs["model"] = "llama-3.1-8b-instant"
+                        return self.client.chat.completions.create(**kwargs)
+                    except Exception as fb1:
+                        _log.warning(f"Groq fallback model failed: {fb1}")
+
+                # Fallback 2: Google Gemini (gemini-2.0-flash via GEMINI_API_KEY)
+                gemini_key = _get_gemini_key()
+                if gemini_key:
+                    try:
+                        _log.info("Fallback Tier 2: Trying Google Gemini API (gemini-2.0-flash)...")
+                        gem_client = OpenAI(
+                            api_key=gemini_key,
+                            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                            max_retries=2,
+                            timeout=30.0,
+                        )
+                        kwargs["model"] = "gemini-2.0-flash"
+                        return gem_client.chat.completions.create(**kwargs)
+                    except Exception as fb2:
+                        _log.warning(f"Gemini fallback failed: {fb2}")
+
+            raise exc
+
     def run(
         self,
         user_message: str,
@@ -45,12 +107,10 @@ class BaseAgent:
         with LatencyTimer(_log, f"{name}.run"):
             while True:
                 try:
-                    resp = self.client.chat.completions.create(
-                        model=self.settings.chat_model,
+                    resp = self._create_completion_with_fallback(
                         messages=messages,
                         tools=self.TOOLS,
                         tool_choice="auto",
-                        max_tokens=self.settings.max_completion_tokens,
                     )
                 except Exception as exc:
                     _log.error(f"API Call Error ({name}): {exc}")
