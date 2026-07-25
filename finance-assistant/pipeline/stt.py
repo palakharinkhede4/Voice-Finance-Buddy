@@ -59,7 +59,7 @@ class STTEngine:
         openai_client: OpenAI,
         openai_model:  str  = "whisper-1",
         fw_model_size: str  = "tiny",
-        default_lang:  str  = "hi",
+        default_lang:  str  = "",
     ):
         self._client        = openai_client
         self._openai_model  = openai_model
@@ -112,14 +112,18 @@ class STTEngine:
             _log.warning("No STT API key provided and faster-whisper unavailable.")
             return ""
         try:
-            buf       = io.BytesIO(audio_bytes)
-            buf.name  = "recording.wav"
-            resp = self._client.audio.transcriptions.create(
-                model=self._openai_model,
-                file=buf,
-                response_format="json",
-                language=language or "hi",
-            )
+            buf = io.BytesIO(audio_bytes)
+            file_tuple = ("recording.wav", buf, "audio/wav")
+            kwargs: dict = {
+                "model": self._openai_model,
+                "file": file_tuple,
+                "response_format": "json",
+            }
+            # Only set language if explicitly provided; omit to let Whisper auto-detect English/Hinglish/Hindi
+            if language and language.strip():
+                kwargs["language"] = language.strip()
+
+            resp = self._client.audio.transcriptions.create(**kwargs)
             return resp.text.strip()
         except Exception as err:
             _log.error(f"STT API error: {err}")

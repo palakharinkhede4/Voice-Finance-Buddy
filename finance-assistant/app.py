@@ -93,8 +93,10 @@ if "conversation_history"  not in st.session_state:
     st.session_state.conversation_history  = []
 if "chat_display"          not in st.session_state:
     st.session_state.chat_display          = []  # (role, content, agent_tag)
-if "last_audio_b64"        not in st.session_state:
-    st.session_state.last_audio_b64        = None
+if "last_audio_bytes"      not in st.session_state:
+    st.session_state.last_audio_bytes      = None
+if "audio_key_counter"     not in st.session_state:
+    st.session_state.audio_key_counter     = 0
 if "last_recording_hash"   not in st.session_state:
     st.session_state.last_recording_hash   = None
 if "last_pipeline_result"  not in st.session_state:
@@ -115,8 +117,8 @@ def _update_history(result: PipelineResult) -> None:
 
 def _play_tts(result: PipelineResult) -> None:
     if result.audio_bytes:
-        b64 = base64.b64encode(result.audio_bytes).decode()
-        st.session_state.last_audio_b64 = b64
+        st.session_state.last_audio_bytes = result.audio_bytes
+        st.session_state.audio_key_counter += 1
 
 def render_pipeline(result: PipelineResult) -> None:
     with st.expander("⚡ Pipeline Execution Trace", expanded=False):
@@ -205,7 +207,7 @@ with st.sidebar:
     with st.expander("💡 Sample Prompts", expanded=False):
         st.markdown("""
 **Balance:** *"Mera balance kitna hai?"*
-**Spending:** *"इस महीने कितना खर्चा हुआ?"*
+**Spending:** *"What is my spending this month?"*
 **Budget:** *"Am I over budget this month?"*
 **SIP:** *"₹5000 SIP for 10 years at 12%?"*
 **EMI:** *"₹30L home loan 8.5% 20 years?"*
@@ -217,7 +219,7 @@ with st.sidebar:
 # ── Main Header ───────────────────────────────────────────────────────────────
 
 st.markdown("# 🎙️ Voice Finance Buddy")
-st.caption("Voice & Text AI Personal Finance Assistant · Hindi · English · Hinglish")
+st.caption("Voice & Text AI Personal Finance Assistant · English · Hindi · Hinglish")
 st.divider()
 
 # ── Single-Page Layout: Left = Assistant | Right = Conversation ───────────────
@@ -266,7 +268,7 @@ with left_col:
         with st.form("text_form", clear_on_submit=True):
             text_input = st.text_input(
                 "Your question:",
-                placeholder="Mera balance kitna hai? / SIP ₹5000 for 10 years?",
+                placeholder="What is my balance? / SIP ₹5000 for 10 years?",
             )
             submitted = st.form_submit_button(
                 "➤ Ask", type="primary", **_cw()
@@ -340,15 +342,14 @@ with left_col:
                 _play_tts(result)
                 st.session_state.last_pipeline_result = result
 
-    # ── TTS playback ──────────────────────────────────────────────────────────
-    if st.session_state.last_audio_b64:
+    # ── TTS playback with Autoplay & Dynamic Key Refresh ──────────────────────
+    if st.session_state.get("last_audio_bytes"):
         st.markdown("#### 🔊 Voice Response")
-        st.markdown(
-            f"""<audio autoplay controls style="width:100%;border-radius:8px;">
-                <source src="data:audio/mp3;base64,{st.session_state.last_audio_b64}"
-                        type="audio/mp3">
-            </audio>""",
-            unsafe_allow_html=True,
+        st.audio(
+            st.session_state.last_audio_bytes,
+            format="audio/mp3",
+            autoplay=True,
+            key=f"voice_tts_player_{st.session_state.get('audio_key_counter', 0)}"
         )
 
     # ── Pipeline trace ────────────────────────────────────────────────────────
@@ -356,33 +357,50 @@ with left_col:
         st.divider()
         render_pipeline(st.session_state.last_pipeline_result)
 
-# ── Right Column: Conversation Feed ───────────────────────────────────────────
+# ── Right Column: Conversation Feed (Newest Queries at Top) ───────────────────
 with right_col:
     st.markdown("### 💬 Conversation")
 
     if not st.session_state.chat_display:
         st.info("No conversation yet. Press the mic or type a question to begin!")
     else:
-        for item in st.session_state.chat_display:
-            role, content = item[0], item[1]
-            agent_tag     = item[2] if len(item) > 2 else None
-
-            if role == "user":
-                with st.chat_message("user"):
-                    st.markdown(content)
+        # Group chat items into (user, assistant) exchanges
+        exchanges = []
+        i = 0
+        while i < len(st.session_state.chat_display):
+            item = st.session_state.chat_display[i]
+            if item[0] == "user":
+                user_item = item
+                assistant_item = (
+                    st.session_state.chat_display[i + 1]
+                    if i + 1 < len(st.session_state.chat_display)
+                    and st.session_state.chat_display[i + 1][0] == "assistant"
+                    else None
+                )
+                exchanges.append((user_item, assistant_item))
+                i += 2 if assistant_item else 1
             else:
+                i += 1
+
+        # Render in reverse order so latest exchange appears at the top
+        for user_item, assistant_item in reversed(exchanges):
+            with st.chat_message("user"):
+                st.markdown(user_item[1])
+
+            if assistant_item:
                 with st.chat_message("assistant", avatar="🤖"):
+                    agent_tag = assistant_item[2] if len(assistant_item) > 2 else None
                     if agent_tag:
                         st.markdown(
                             f'<span class="agent-badge">🤖 {agent_tag} Agent</span>',
                             unsafe_allow_html=True,
                         )
-                    st.markdown(content)
+                    st.markdown(assistant_item[1])
 
         if st.button("🗑️ Clear Chat", **_cw()):
             st.session_state.conversation_history = []
             st.session_state.chat_display         = []
-            st.session_state.last_audio_b64       = None
+            st.session_state.last_audio_bytes     = None
             st.session_state.last_pipeline_result = None
             pipeline.memory.clear()
             st.rerun()

@@ -141,7 +141,7 @@ class FinancePipeline:
             openai_client=self.client,
             openai_model=self.settings.transcribe_model,
             fw_model_size=self.settings.fw_model_size,
-            default_lang="hi",
+            default_lang="",
         )
 
         # Stage 6: LLM — Ollama → OpenAI
