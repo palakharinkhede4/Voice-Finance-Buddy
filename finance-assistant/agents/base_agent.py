@@ -56,39 +56,50 @@ class BaseAgent:
         try:
             return self.client.chat.completions.create(**kwargs)
         except Exception as exc:
-            _log.warning(f"Primary LLM call failed ({exc}). Initiating auto-fallback sequence...")
+            _log.warning(f"Primary LLM call failed ({exc}). Initiating multi-model fallback sequence...")
 
-            # Fallback Option A: Try Gemini (gemini-2.0-flash) if primary was not Gemini
+            fallbacks = []
+
+            # 1. Gemini models (free-tier supported)
             gemini_key = _get_gemini_key()
-            if gemini_key and "generativelanguage" not in str(getattr(self.client, "base_url", "")).lower():
-                try:
-                    _log.info("Fallback: Trying Google Gemini API (gemini-2.0-flash)...")
-                    gem_client = OpenAI(
-                        api_key=gemini_key,
-                        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-                        max_retries=2,
-                        timeout=30.0,
-                    )
-                    kwargs["model"] = "gemini-2.0-flash"
-                    return gem_client.chat.completions.create(**kwargs)
-                except Exception as fb1:
-                    _log.warning(f"Gemini fallback failed: {fb1}")
+            if gemini_key:
+                fallbacks.append(("gemini", "gemini-1.5-flash"))
+                fallbacks.append(("gemini", "gemini-1.5-flash-8b"))
+                fallbacks.append(("gemini", "gemini-2.0-flash"))
 
-            # Fallback Option B: Try Groq if primary was not Groq
+            # 2. Groq models (high-capacity buckets)
             groq_key = _get_groq_key()
-            if groq_key and "groq" not in str(getattr(self.client, "base_url", "")).lower():
+            if groq_key:
+                fallbacks.append(("groq", "llama-3.1-8b-instant"))
+                fallbacks.append(("groq", "mixtral-8x7b-32768"))
+                fallbacks.append(("groq", "gemma2-9b-it"))
+                fallbacks.append(("groq", "llama-3.3-70b-versatile"))
+
+            for provider, model_name in fallbacks:
+                if model_name == kwargs.get("model"):
+                    continue
+
                 try:
-                    _log.info("Fallback: Trying Groq API (llama-3.3-70b-versatile)...")
-                    groq_client = OpenAI(
-                        api_key=groq_key,
-                        base_url="https://api.groq.com/openai/v1",
-                        max_retries=2,
-                        timeout=30.0,
-                    )
-                    kwargs["model"] = "llama-3.3-70b-versatile"
-                    return groq_client.chat.completions.create(**kwargs)
-                except Exception as fb2:
-                    _log.warning(f"Groq fallback failed: {fb2}")
+                    _log.info(f"Fallback attempt: provider={provider}, model={model_name}")
+                    if provider == "gemini":
+                        client = OpenAI(
+                            api_key=gemini_key,
+                            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                            max_retries=2,
+                            timeout=30.0,
+                        )
+                    else:
+                        client = OpenAI(
+                            api_key=groq_key,
+                            base_url="https://api.groq.com/openai/v1",
+                            max_retries=2,
+                            timeout=30.0,
+                        )
+
+                    kwargs["model"] = model_name
+                    return client.chat.completions.create(**kwargs)
+                except Exception as fb_err:
+                    _log.warning(f"Fallback {provider}/{model_name} failed: {fb_err}")
 
             raise exc
 
