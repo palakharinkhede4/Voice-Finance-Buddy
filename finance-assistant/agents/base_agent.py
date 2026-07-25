@@ -44,13 +44,24 @@ class BaseAgent:
 
         with LatencyTimer(_log, f"{name}.run"):
             while True:
-                resp = self.client.chat.completions.create(
-                    model=self.settings.chat_model,
-                    messages=messages,
-                    tools=self.TOOLS,
-                    tool_choice="auto",
-                    max_tokens=self.settings.max_completion_tokens,
-                )
+                try:
+                    resp = self.client.chat.completions.create(
+                        model=self.settings.chat_model,
+                        messages=messages,
+                        tools=self.TOOLS,
+                        tool_choice="auto",
+                        max_tokens=self.settings.max_completion_tokens,
+                    )
+                except Exception as exc:
+                    _log.error(f"API Call Error ({name}): {exc}")
+                    err_reply = (
+                        "⚠️ **API Connection / Key Error**\n\n"
+                        "Unable to connect to the cloud AI service. Please verify that **GROQ_API_KEY** or **GEMINI_API_KEY** "
+                        "is set in Streamlit Cloud Secrets (**Manage App → Settings → Secrets**).\n\n"
+                        f"*Details: {exc}*"
+                    )
+                    return err_reply, messages
+
                 msg = resp.choices[0].message
                 messages.append(msg)
 
@@ -88,14 +99,24 @@ class BaseAgent:
 
         while True:
             # Stream the next LLM call
-            stream = self.client.chat.completions.create(
-                model=self.settings.chat_model,
-                messages=messages,
-                tools=self.TOOLS,
-                tool_choice="auto",
-                stream=True,
-                max_tokens=self.settings.max_completion_tokens,
-            )
+            try:
+                stream = self.client.chat.completions.create(
+                    model=self.settings.chat_model,
+                    messages=messages,
+                    tools=self.TOOLS,
+                    tool_choice="auto",
+                    stream=True,
+                    max_tokens=self.settings.max_completion_tokens,
+                )
+            except Exception as exc:
+                _log.error(f"API Stream Error ({name}): {exc}")
+                yield (
+                    "⚠️ **API Connection / Key Error**\n\n"
+                    "Unable to connect to the cloud AI service. Please verify that **GROQ_API_KEY** or **GEMINI_API_KEY** "
+                    "is set in Streamlit Cloud Secrets (**Manage App → Settings → Secrets**).\n\n"
+                    f"*Details: {exc}*"
+                )
+                return
 
             content:     str            = ""
             tool_calls:  dict[int, dict] = {}

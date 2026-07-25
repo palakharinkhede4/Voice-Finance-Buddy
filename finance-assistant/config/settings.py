@@ -54,15 +54,37 @@ class Settings:
 
 
 def _get_secret_or_env(key: str) -> Optional[str]:
-    val = os.environ.get(key)
-    if val:
-        return val
+    # 1. Check os.environ
+    for k in (key, key.upper(), key.lower()):
+        val = os.environ.get(k)
+        if val and isinstance(val, str) and val.strip():
+            return val.strip().strip("'\"")
+
+    # 2. Check st.secrets recursively
     try:
         import streamlit as st
-        if key in st.secrets:
-            return st.secrets[key]
+        # Direct check
+        for k in (key, key.upper(), key.lower()):
+            if k in st.secrets:
+                val = st.secrets[k]
+                if isinstance(val, str) and val.strip():
+                    return val.strip().strip("'\"")
+        
+        # Check sub-dictionaries in st.secrets
+        for sec_key in st.secrets:
+            try:
+                sub = st.secrets[sec_key]
+                if isinstance(sub, (dict, type(st.secrets))):
+                    for k in (key, key.upper(), key.lower()):
+                        if k in sub:
+                            val = sub[k]
+                            if isinstance(val, str) and val.strip():
+                                return val.strip().strip("'\"")
+            except Exception:
+                pass
     except Exception:
         pass
+
     return None
 
 
@@ -79,6 +101,7 @@ def get_settings() -> Settings:
 
     groq_key   = _get_secret_or_env("GROQ_API_KEY")
     gemini_key = _get_secret_or_env("GEMINI_API_KEY")
+    openai_key = _get_secret_or_env("OPENAI_API_KEY")
 
     if groq_key:
         api_key          = groq_key
@@ -90,10 +113,15 @@ def get_settings() -> Settings:
         base_url         = "https://generativelanguage.googleapis.com/v1beta/openai/"
         chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "gemini-2.0-flash"
         transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
+    elif openai_key:
+        api_key          = openai_key
+        base_url         = None
+        chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "gpt-4o-mini"
+        transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
     else:
         # 100% Free / OSS mode — Ollama local or offline mode (no key required)
         api_key          = "free-oss"
-        base_url         = None
+        base_url         = "http://localhost:11434/v1"
         chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "llama3.2"
         transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
 
