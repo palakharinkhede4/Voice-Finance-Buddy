@@ -105,18 +105,18 @@ def get_settings() -> Settings:
     openai_key = _get_secret_or_env("OPENAI_API_KEY")
 
     provider_name = "None"
-    if groq_key:
-        api_key          = groq_key
-        base_url         = "https://api.groq.com/openai/v1"
-        chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "llama-3.3-70b-versatile"
-        transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-large-v3-turbo"
-        provider_name    = "Groq"
-    elif gemini_key:
+    if gemini_key:
         api_key          = gemini_key
         base_url         = "https://generativelanguage.googleapis.com/v1beta/openai/"
         chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "gemini-2.0-flash"
         transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
         provider_name    = "Gemini"
+    elif groq_key:
+        api_key          = groq_key
+        base_url         = "https://api.groq.com/openai/v1"
+        chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "llama-3.3-70b-versatile"
+        transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-large-v3-turbo"
+        provider_name    = "Groq"
     elif openai_key:
         api_key          = openai_key
         base_url         = None

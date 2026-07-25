@@ -14,20 +14,10 @@ import os
 _log = get_logger("agents")
 
 
+from config.settings import _get_secret_or_env
+
 def _get_gemini_key() -> str | None:
-    val = os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_KEY") or os.environ.get("GEMINI")
-    if val and isinstance(val, str) and val.strip() and val.strip().lower() not in ("dummy", "your_key", "none"):
-        return val.strip().strip("'\"")
-    try:
-        import streamlit as st
-        for k in ("GEMINI_API_KEY", "GEMINI_KEY", "GEMINI", "gemini_api_key", "gemini"):
-            if k in st.secrets:
-                v = st.secrets[k]
-                if isinstance(v, str) and v.strip() and v.strip().lower() not in ("dummy", "your_key", "none"):
-                    return v.strip().strip("'\"")
-    except Exception:
-        pass
-    return None
+    return _get_secret_or_env("GEMINI_API_KEY")
 
 
 class BaseAgent:
