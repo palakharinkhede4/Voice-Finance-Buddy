@@ -79,6 +79,29 @@ st.markdown("""
     .budget-ok   { color: #58D68D; font-weight: 600; }
     .budget-warn { color: #F39C12; font-weight: 600; }
     .budget-over { color: #E74C3C; font-weight: 600; }
+    @keyframes pulse-ring {
+        0% { transform: scale(0.96); box-shadow: 0 0 0 0 rgba(108,99,255, 0.7); }
+        70% { transform: scale(1.04); box-shadow: 0 0 0 16px rgba(108,99,255, 0); }
+        100% { transform: scale(0.96); box-shadow: 0 0 0 0 rgba(108,99,255, 0); }
+    }
+    .mic-recording-card {
+        background: linear-gradient(135deg, rgba(26,29,46,0.9), rgba(40,35,75,0.7));
+        border: 1px solid rgba(108,99,255,0.4);
+        border-radius: 16px;
+        padding: 18px 22px;
+        text-align: center;
+        margin-bottom: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    iframe[title="audio_recorder_streamlit.audio_recorder"] {
+        border-radius: 50px !important;
+        transition: transform 0.25 ease;
+        display: block !important;
+        margin: 10px auto !important;
+    }
+    iframe[title="audio_recorder_streamlit.audio_recorder"]:hover {
+        transform: scale(1.08);
+    }
     #MainMenu, footer { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
@@ -240,20 +263,35 @@ with left_col:
 
     # ── Microphone ────────────────────────────────────────────────────────────
     if input_mode == "🎤 Microphone":
-        st.markdown("Click the mic to **start** recording, click again to **stop**.")
+        st.markdown(
+            """
+            <div class="mic-recording-card">
+                <div style="font-size: 1.05rem; font-weight: 700; color: #FAFAFA; margin-bottom: 4px;">
+                    🎙️ Voice Recording Mode
+                </div>
+                <div style="font-size: 0.83rem; color: #b0b8d0;">
+                    Click the microphone below to <b>start recording</b>. Speak your question naturally, then click again to <b>stop & submit</b>.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
         audio_bytes = audio_recorder(
-            text="",
-            recording_color="#6C63FF",
-            neutral_color="#4A4A5A",
+            text="Press to Record / Stop",
+            recording_color="#FF4B4B",
+            neutral_color="#6C63FF",
             icon_name="microphone",
-            icon_size="2x",
+            icon_size="3x",
             pause_threshold=10.0,
             energy_threshold=(-1.0, 1.0),
         )
+
         if audio_bytes:
             recording_hash = hashlib.md5(audio_bytes).hexdigest()
             if recording_hash != st.session_state.last_recording_hash:
                 st.session_state.last_recording_hash = recording_hash
+                st.markdown("<div style='text-align:center; margin-top:8px;'><span style='background:rgba(88,214,141,0.2); color:#58D68D; border:1px solid #58D68D; padding:4px 14px; border-radius:20px; font-size:0.8rem; font-weight:600;'>✅ Audio Recorded Successfully — Processing…</span></div>", unsafe_allow_html=True)
                 st.audio(audio_bytes, format="audio/wav")
                 is_audio  = True
                 submitted = True
@@ -261,7 +299,16 @@ with left_col:
                 st.audio(audio_bytes, format="audio/wav")
                 st.caption("Already processed — click mic to record again.")
         else:
-            st.caption("🔴 Press the mic button above to start speaking")
+            st.markdown(
+                """
+                <div style="text-align: center; margin-top: 8px;">
+                    <span style="background: rgba(108,99,255,0.15); color: #a09aff; border: 1px solid rgba(108,99,255,0.3); padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
+                        🔴 Ready to Record — Click Mic Above
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     # ── Text Input ────────────────────────────────────────────────────────────
     else:
