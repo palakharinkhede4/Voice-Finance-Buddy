@@ -115,8 +115,8 @@ class SQLiteDB:
         self.conn.execute("""
             INSERT INTO users (name, account_num, phone, email, pan, annual_income)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("Rahul Sharma", "XXXX-XXXX-1234", "+91-9876543210",
-              "rahul.sharma@email.com", "ABCDE1234F", 900000.0))
+        """, ("Palak Harinkhede", "XXXX-XXXX-1234", "+91-9876543210",
+              "palak.harinkhede@email.com", "ABCDE1234F", 900000.0))
 
         # Seed accounts
         accounts_data = [

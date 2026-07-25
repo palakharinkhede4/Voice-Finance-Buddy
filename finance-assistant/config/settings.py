@@ -154,9 +154,9 @@ def get_settings() -> Settings:
         max_input_length      = int(os.environ.get("ARTHBOT_MAX_INPUT",    "2000")),
 
         # Metadata
-        app_title      = "ArthBot — Finance Assistant",
+        app_title      = "Voice Finance Buddy",
         app_icon       = "💰",
-        user_name      = "Rahul Sharma",
+        user_name      = "Palak Harinkhede",
         account_number = "XXXX-XXXX-1234",
     )
 

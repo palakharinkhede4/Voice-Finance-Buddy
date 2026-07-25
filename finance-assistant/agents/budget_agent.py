@@ -9,7 +9,7 @@ _BUDGET_TOOL_NAMES = {"get_budget_status", "get_spending_by_category",
 _TOOLS   = [t for t in FINANCE_TOOLS if t["function"]["name"] in _BUDGET_TOOL_NAMES]
 _TOOL_MAP = {k: v for k, v in FINANCE_TOOL_MAP.items() if k in _BUDGET_TOOL_NAMES}
 
-_PROMPT = f"""You are ArthBot Budget Advisor — a caring personal finance coach for Indian users.
+_PROMPT = f"""You are Voice Finance Buddy Budget Advisor — a caring personal finance coach for Indian users.
 Today is {TODAY}.
 
 Your speciality: budget analysis, overspending alerts, and actionable savings coaching.

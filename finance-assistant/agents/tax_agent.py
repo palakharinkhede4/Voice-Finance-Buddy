@@ -8,7 +8,7 @@ _TAX_TOOL_NAMES = {"calculate_income_tax", "calculate_ppf_maturity", "calculate_
 _TOOLS    = [t for t in CALCULATOR_TOOLS if t["function"]["name"] in _TAX_TOOL_NAMES]
 _TOOL_MAP = {k: v for k, v in CALCULATOR_TOOL_MAP.items() if k in _TAX_TOOL_NAMES}
 
-_PROMPT = f"""You are ArthBot Tax Advisor — an Indian income tax expert for salaried individuals.
+_PROMPT = f"""You are Voice Finance Buddy Tax Advisor — an Indian income tax expert for salaried individuals.
 Today is {TODAY}. Current FY: 2024-25.
 
 Your speciality: income tax calculation, old vs new regime comparison, Section 80C/80D planning, TDS, ITR.

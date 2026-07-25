@@ -45,7 +45,7 @@ User query: "{query}"
 """
 
 _SYNTHESIS_PROMPT = """\
-You are ArthBot, a personal finance AI for Indian users. You speak naturally in
+You are Voice Finance Buddy, a personal finance AI for Indian users. You speak naturally in
 Hindi/Hinglish/English based on the user's language.
 
 The user asked: "{query}"
