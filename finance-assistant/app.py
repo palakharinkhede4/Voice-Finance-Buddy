@@ -390,14 +390,13 @@ with left_col:
                 _play_tts(result)
                 st.session_state.last_pipeline_result = result
 
-    # ── TTS playback with Autoplay & Dynamic Key Refresh ──────────────────────
+    # ── TTS playback with Autoplay ────────────────────────────────────────────
     if st.session_state.get("last_audio_bytes"):
         st.markdown("#### 🔊 Voice Response")
         st.audio(
             st.session_state.last_audio_bytes,
             format="audio/mp3",
             autoplay=True,
-            key=f"voice_tts_player_{st.session_state.get('audio_key_counter', 0)}"
         )
 
     # ── Pipeline trace ────────────────────────────────────────────────────────
