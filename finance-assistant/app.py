@@ -12,6 +12,15 @@ warnings.filterwarnings("ignore", message=".*use_container_width.*")
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
+def _cw() -> dict:
+    try:
+        import packaging.version
+        if packaging.version.parse(st.__version__) >= packaging.version.parse("1.60.0"):
+            return {"width": "stretch"}
+    except Exception:
+        pass
+    return {"use_container_width": True}
+
 from pipeline.orchestrator import FinancePipeline, PipelineResult
 from rag.retriever import RAG_BACKEND
 from charts import (
@@ -197,7 +206,7 @@ with st.sidebar:
     st.caption(f"Account · {db.user.account_number}")
     st.divider()
 
-    if st.button("🏗️ Technical Architecture", use_container_width=True):
+    if st.button("🏗️ Technical Architecture", **_cw()):
         show_architecture_dialog()
 
     st.divider()
@@ -255,14 +264,14 @@ with tab_dash:
     st.markdown("### 🗂️ Spending Breakdown — Last 30 Days")
     col_pie, col_bar = st.columns(2, gap="medium")
     with col_pie:
-        st.plotly_chart(pie_chart_by_category(days=30), use_container_width=True,
+        st.plotly_chart(pie_chart_by_category(days=30), **_cw(),
                         config={"displayModeBar": False})
     with col_bar:
-        st.plotly_chart(bar_chart_by_category(days=30), use_container_width=True,
+        st.plotly_chart(bar_chart_by_category(days=30), **_cw(),
                         config={"displayModeBar": False})
 
     st.markdown("### 📅 Daily Spending Trend")
-    st.plotly_chart(line_chart_daily_spending(days=30), use_container_width=True,
+    st.plotly_chart(line_chart_daily_spending(days=30), **_cw(),
                     config={"displayModeBar": False})
 
     st.markdown("### 🧾 Recent Transactions")
@@ -277,7 +286,7 @@ with tab_dash:
         df.columns = ["Date", "Description", "Category", "Amount", "Account"]
         df["Category"] = df["Category"].str.title()
         df["Account"]  = df["Account"].str.title()
-        st.dataframe(df, use_container_width=True, hide_index=True,
+        st.dataframe(df, **_cw(), hide_index=True,
             column_config={
                 "Date":        st.column_config.TextColumn("Date",        width="small"),
                 "Description": st.column_config.TextColumn("Description", width="large"),
@@ -339,7 +348,7 @@ with tab_voice:
                     placeholder="Mera balance kitna hai? / SIP ₹5000 for 10 years?",
                 )
                 submitted = st.form_submit_button(
-                    "➤ Ask", type="primary", use_container_width=True
+                    "➤ Ask", type="primary", **_cw()
                 )
                 if submitted and text_input.strip():
                     user_text = text_input.strip()
@@ -449,7 +458,7 @@ with tab_voice:
                             )
                         st.markdown(content)
 
-            if st.button("🗑️ Clear Chat", use_container_width=True):
+            if st.button("🗑️ Clear Chat", **_cw()):
                 st.session_state.conversation_history = []
                 st.session_state.chat_display         = []
                 st.session_state.last_audio_b64       = None
