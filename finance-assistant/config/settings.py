@@ -53,6 +53,19 @@ class Settings:
     })
 
 
+def _get_secret_or_env(key: str) -> Optional[str]:
+    val = os.environ.get(key)
+    if val:
+        return val
+    try:
+        import streamlit as st
+        if key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+    return None
+
+
 def get_settings() -> Settings:
     # Load .env if present (check current dir and settings dir)
     try:
@@ -64,32 +77,25 @@ def get_settings() -> Settings:
     except ImportError:
         pass
 
-
-    groq_key   = os.environ.get("GROQ_API_KEY")
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    openai_key = os.environ.get("OPENAI_API_KEY")
+    groq_key   = _get_secret_or_env("GROQ_API_KEY")
+    gemini_key = _get_secret_or_env("GEMINI_API_KEY")
 
     if groq_key:
         api_key          = groq_key
         base_url         = "https://api.groq.com/openai/v1"
-        chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "llama-3.3-70b-versatile")
-        transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-large-v3-turbo")
+        chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "llama-3.3-70b-versatile"
+        transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-large-v3-turbo"
     elif gemini_key:
         api_key          = gemini_key
         base_url         = "https://generativelanguage.googleapis.com/v1beta/openai/"
-        chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "gemini-2.0-flash")
-        transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-1")
-    elif openai_key:
-        api_key          = openai_key
-        base_url         = None
-        chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "gpt-4o-mini")
-        transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-1")
+        chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "gemini-2.0-flash"
+        transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
     else:
         # 100% Free / OSS mode — Ollama local or offline mode (no key required)
         api_key          = "free-oss"
         base_url         = None
-        chat_model       = os.environ.get("ARTHBOT_CHAT_MODEL", "llama3.2")
-        transcribe_model = os.environ.get("ARTHBOT_TRANSCRIBE_MODEL", "whisper-1")
+        chat_model       = _get_secret_or_env("ARTHBOT_CHAT_MODEL") or "llama3.2"
+        transcribe_model = _get_secret_or_env("ARTHBOT_TRANSCRIBE_MODEL") or "whisper-1"
 
     return Settings(
         openai_api_key   = api_key,

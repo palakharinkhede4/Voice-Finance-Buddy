@@ -24,7 +24,7 @@ _log = get_logger("stt")
 
 class STTBackend(str, Enum):
     FASTER_WHISPER = "faster-whisper (local)"
-    OPENAI_WHISPER = "OpenAI Whisper (API)"
+    OPENAI_WHISPER = "Cloud Whisper (API)"
 
 
 def _try_load_faster_whisper(model_size: str = "tiny") -> Optional[object]:

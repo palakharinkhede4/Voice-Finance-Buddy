@@ -47,8 +47,7 @@ streamlit run app.py
 Create a `.env` file (or set in your deployment platform):
 
 ```env
-# Optional API Keys
-OPENAI_API_KEY=sk-...
+# API Keys (Groq or Gemini)
 GROQ_API_KEY=gsk_...
 GEMINI_API_KEY=AIza...
 ```
@@ -108,7 +107,9 @@ finance-assistant/
 3. Select repo, branch, set `app.py` as main file.
 4. Add secrets under **Settings → Secrets**:
    ```toml
-   OPENAI_API_KEY = "sk-..."
+   GROQ_API_KEY = "gsk_..."
+   # or
+   GEMINI_API_KEY = "AIza..."
    ```
 
 ### Railway
@@ -125,13 +126,13 @@ railway up
 1. Create a new **Web Service** → connect GitHub repo.
 2. Build command: `pip install -r requirements.txt`
 3. Start command: `streamlit run app.py --server.port $PORT --server.address 0.0.0.0`
-4. Set `OPENAI_API_KEY` in Environment Variables.
+4. Set `GROQ_API_KEY` or `GEMINI_API_KEY` in Environment Variables.
 
 ### Docker
 
 ```bash
 docker build -t arthbot .
-docker run -p 8501:8501 -e OPENAI_API_KEY=sk-... arthbot
+docker run -p 8501:8501 -e GROQ_API_KEY=gsk_... arthbot
 ```
 
 ---

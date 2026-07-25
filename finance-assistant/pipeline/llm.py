@@ -24,7 +24,7 @@ _log = get_logger("llm")
 
 
 class LLMBackend(str, Enum):
-    OPENAI = "OpenAI (cloud)"
+    OPENAI = "Cloud API (Groq / Gemini)"
     OLLAMA = "Ollama (local)"
 
 

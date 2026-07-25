@@ -218,7 +218,7 @@ class FinancePipeline:
             intent = resp.choices[0].message.content.strip().lower().split()[0]
             if intent in AGENT_LABELS:
                 _log.info(f"LLM classifier → {intent}")
-                return intent, "GPT-4o-mini"
+                return intent, self.settings.chat_model
         except Exception as exc:
             _log.debug(f"LLM classifier fallback ({exc})")
 
@@ -388,9 +388,9 @@ class FinancePipeline:
         if tts_enabled and reply:
             t0 = time.perf_counter()
             result.audio_bytes = self.tts.synthesize(reply)
-            result.add_stage("⑦ TTS", "OpenAI TTS", t0)
+            result.add_stage("⑦ TTS", "gTTS", t0)
         else:
-            result.add_stage("⑦ TTS", "OpenAI TTS",
+            result.add_stage("⑦ TTS", "gTTS",
                              time.perf_counter(), skipped=not tts_enabled)
 
         _log.info(f"Pipeline done | agent={result.agent_name} | total={result.total_ms:.0f}ms")
@@ -402,5 +402,5 @@ class FinancePipeline:
             return OpenAI(api_key=s.openai_api_key, base_url=s.openai_base_url)
         if s.openai_api_key == "free-oss":
             return OpenAI(api_key="ollama", base_url=f"{s.ollama_url}/v1")
-        return OpenAI(api_key=s.openai_api_key)
+        return OpenAI(api_key=s.openai_api_key or "free-oss")
 

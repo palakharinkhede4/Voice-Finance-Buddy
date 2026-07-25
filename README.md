@@ -60,9 +60,9 @@ Audio Output
 ⚙️ Tech Stack
 
 - Python
-- OpenAI API
-  - Whisper (Speech-to-Text)
-  - GPT (LLM for reasoning & responses)
+- Groq / Gemini API
+  - Llama 3.3 70B & Gemini 2.0 Flash (LLM for reasoning & responses)
+  - Whisper (Speech-to-Text via Groq / faster-whisper)
 - Streamlit — UI
 - gTTS — Text-to-Speech
 - Custom Python Modules — Backend logic
@@ -99,9 +99,11 @@ source venv/bin/activate   # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 
-4. Add your OpenAI API key
+4. Add your Groq or Gemini API key
 
-export OPENAI_API_KEY="your_api_key_here"
+export GROQ_API_KEY="your_groq_api_key"
+# or
+export GEMINI_API_KEY="your_gemini_api_key"
 
 5. Run the app
 
