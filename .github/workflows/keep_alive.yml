@@ -1,0 +1,37 @@
+name: Keep Streamlit App Alive
+
+on:
+  schedule:
+    # Runs automatically every 6 hours to reset Streamlit Cloud's inactivity timer
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+jobs:
+  ping:
+    name: Ping Streamlit App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Keep-Alive Ping to Streamlit App
+        env:
+          STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL || 'https://voice-finance-buddy.streamlit.app' }}
+        run: |
+          URL="${STREAMLIT_APP_URL}"
+          echo "Pinging Streamlit app at: $URL"
+          
+          # Send direct curl request with Chrome User-Agent and a 15-second timeout.
+          # Note: -L is omitted to prevent recursive 303 See Other redirect loops on Streamlit Cloud.
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
+            --max-time 15 \
+            "$URL")
+            
+          echo "HTTP Response Status Code: $HTTP_STATUS"
+          
+          # Accepts 2xx and 3xx status codes (Streamlit Cloud's 303 redirect confirms active server hit)
+          if [[ "$HTTP_STATUS" =~ ^(2|3)[0-9]{2}$ ]]; then
+            echo "Successfully pinged Streamlit app! (Status $HTTP_STATUS)"
+            exit 0
+          else
+            echo "Error: Received failure status code $HTTP_STATUS from Streamlit app"
+            exit 1
+          fi
