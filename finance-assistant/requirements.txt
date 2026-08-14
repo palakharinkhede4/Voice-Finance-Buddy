@@ -4,7 +4,7 @@ torchvision
 transformers
 openai>=1.54.0
 python-dotenv>=1.0.0
-plotly>=5.22.0
+plotly>=5.22.0  
 pandas>=2.0.0
 audio-recorder-streamlit>=0.0.10
 pydub>=0.25.1
