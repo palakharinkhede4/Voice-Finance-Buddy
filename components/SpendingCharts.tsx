@@ -20,17 +20,17 @@ interface SpendingChartsProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  housing: "#6366F1", // Indigo
-  shopping: "#EC4899", // Pink
-  travel: "#3B82F6", // Blue
-  food: "#F59E0B", // Amber
-  grocery: "#10B981", // Emerald
-  transport: "#06B6D4", // Cyan
-  utilities: "#8B5CF6", // Violet
-  health: "#EF4444", // Red
-  entertainment: "#F97316", // Orange
-  education: "#14B8A6", // Teal
-  transfer: "#64748B", // Slate
+  housing: "#6366F1",
+  shopping: "#EC4899",
+  travel: "#3B82F6",
+  food: "#F59E0B",
+  grocery: "#10B981",
+  transport: "#06B6D4",
+  utilities: "#8B5CF6",
+  health: "#EF4444",
+  entertainment: "#F97316",
+  education: "#14B8A6",
+  transfer: "#64748B",
 };
 
 export const SpendingCharts: React.FC<SpendingChartsProps> = ({
@@ -49,22 +49,22 @@ export const SpendingCharts: React.FC<SpendingChartsProps> = ({
   const totalSpent = pieData.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      {/* Category Breakdown Donut Chart */}
-      <div className="glass-panel rounded-2xl p-6 lg:col-span-5">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+      {/* Donut Chart */}
+      <div className="theme-card rounded-2xl p-5 lg:col-span-5">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
               Spending by Category
             </h3>
-            <p className="text-xs text-slate-400">Last 30 days distribution</p>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Last 30 days distribution</p>
           </div>
-          <span className="rounded-lg border border-white/[0.08] bg-surface-card px-2.5 py-1 text-xs font-semibold text-slate-300">
+          <span className="rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-zinc-300">
             Total: ₹{totalSpent.toLocaleString("en-IN")}
           </span>
         </div>
 
-        <div className="relative mt-4 h-60 w-full">
+        <div className="relative mt-4 h-56 w-full">
           {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -72,8 +72,8 @@ export const SpendingCharts: React.FC<SpendingChartsProps> = ({
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={65}
-                  outerRadius={95}
+                  innerRadius={60}
+                  outerRadius={88}
                   paddingAngle={3}
                   dataKey="value"
                   stroke="none"
@@ -91,34 +91,31 @@ export const SpendingCharts: React.FC<SpendingChartsProps> = ({
                     "Spent",
                   ]}
                   contentStyle={{
-                    backgroundColor: "#0F1623",
+                    backgroundColor: "#11131A",
                     borderColor: "rgba(255, 255, 255, 0.1)",
-                    borderRadius: "12px",
+                    borderRadius: "10px",
                     fontSize: "12px",
                     color: "#F8FAFC",
                   }}
-                  itemStyle={{ color: "#F8FAFC" }}
                 />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-full items-center justify-center text-xs text-slate-500">
+            <div className="flex h-full items-center justify-center text-xs text-slate-400">
               No expense data recorded
             </div>
           )}
 
-          {/* Center Label */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-xs uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] uppercase tracking-wider text-slate-400">
               Categories
             </span>
-            <span className="text-lg font-bold text-white">
+            <span className="text-base font-bold text-slate-900 dark:text-white">
               {pieData.length}
             </span>
           </div>
         </div>
 
-        {/* Legend */}
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           {pieData.slice(0, 6).map((item) => (
             <div key={item.name} className="flex items-center justify-between">
@@ -129,9 +126,9 @@ export const SpendingCharts: React.FC<SpendingChartsProps> = ({
                     backgroundColor: CATEGORY_COLORS[item.key] || "#64748B",
                   }}
                 />
-                <span className="truncate text-slate-300">{item.name}</span>
+                <span className="truncate text-slate-600 dark:text-zinc-300">{item.name}</span>
               </div>
-              <span className="font-mono text-slate-400">
+              <span className="font-mono text-slate-500 dark:text-zinc-400">
                 ₹{item.value.toLocaleString("en-IN")}
               </span>
             </div>
@@ -139,19 +136,19 @@ export const SpendingCharts: React.FC<SpendingChartsProps> = ({
         </div>
       </div>
 
-      {/* 14-Day Spending Trajectory Area Chart */}
-      <div className="glass-panel rounded-2xl p-6 lg:col-span-7">
+      {/* 14-Day Trajectory Area Chart */}
+      <div className="theme-card rounded-2xl p-5 lg:col-span-7">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
               14-Day Expense Trajectory
             </h3>
-            <p className="text-xs text-slate-400">Daily debit trend in INR</p>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Daily debit trend in INR</p>
           </div>
-          <span className="text-xs text-slate-400">Real-time telemetry</span>
+          <span className="text-xs text-slate-400">Telemetry</span>
         </div>
 
-        <div className="mt-4 h-64 w-full">
+        <div className="mt-4 h-60 w-full">
           {dailyTrend.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
@@ -160,22 +157,22 @@ export const SpendingCharts: React.FC<SpendingChartsProps> = ({
               >
                 <defs>
                   <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4} />
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.35} />
                     <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="rgba(255, 255, 255, 0.05)"
+                  stroke="rgba(148, 163, 184, 0.15)"
                 />
                 <XAxis
                   dataKey="date"
-                  stroke="#64748B"
+                  stroke="#94A3B8"
                   fontSize={11}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="#64748B"
+                  stroke="#94A3B8"
                   fontSize={11}
                   tickLine={false}
                   tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
@@ -186,26 +183,25 @@ export const SpendingCharts: React.FC<SpendingChartsProps> = ({
                     "Expenses",
                   ]}
                   contentStyle={{
-                    backgroundColor: "#0F1623",
+                    backgroundColor: "#11131A",
                     borderColor: "rgba(255, 255, 255, 0.1)",
-                    borderRadius: "12px",
+                    borderRadius: "10px",
                     fontSize: "12px",
                     color: "#F8FAFC",
                   }}
-                  itemStyle={{ color: "#F8FAFC" }}
                 />
                 <Area
                   type="monotone"
                   dataKey="amount"
                   stroke="#6366F1"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#spendGradient)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-full items-center justify-center text-xs text-slate-500">
+            <div className="flex h-full items-center justify-center text-xs text-slate-400">
               No trend data available
             </div>
           )}

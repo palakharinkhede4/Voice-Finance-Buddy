@@ -30,6 +30,9 @@ export default function Dashboard() {
   const [isTelemetryModalOpen, setIsTelemetryModalOpen] = useState(false);
   const [activeTelemetry, setActiveTelemetry] = useState<OrchestrationResult | undefined>(undefined);
 
+  // Dark / Light Theme State
+  const [isDark, setIsDark] = useState(true);
+
   // Financial Data State
   const [kpis, setKpis] = useState<FinancialKPIs | undefined>(undefined);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -41,8 +44,41 @@ export default function Dashboard() {
   const [indices, setIndices] = useState<MarketIndex[]>([]);
   const [providerName, setProviderName] = useState<string>("AI Active");
 
-  // Initial messages starts empty so user sees clean prompt directory and hero console
+  // Chat Messages State (starts clean without noisy greeting)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // Initialize theme based on system settings or localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const shouldUseDark = stored ? stored === "dark" : prefersDark;
+
+      setIsDark(shouldUseDark);
+      if (shouldUseDark) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {
+      // fallback
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    try {
+      localStorage.setItem("theme", nextDark ? "dark" : "light");
+      if (nextDark) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {
+      // fallback
+    }
+  };
 
   // Fetch initial financial data from server
   const fetchDashboardData = async () => {
@@ -171,7 +207,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background font-sans text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-background font-sans text-slate-900 dark:text-zinc-100 transition-colors">
       {/* Top Header */}
       <Header
         indices={indices}
@@ -179,21 +215,18 @@ export default function Dashboard() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenTelemetry={() => setIsTelemetryModalOpen(true)}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main Content */}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 sm:px-6">
-        {/* KPI Banner */}
-        <div className="mb-5">
-          <KPICards kpis={kpis} />
-        </div>
-
-        {/* Tab 1: AI Voice Assistant Hub */}
+        {/* Tab 1: AI Voice Assistant Hub (Clean, focused, Hero Voice Console in front) */}
         {activeTab === "assistant" && (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
             {/* Main Assistant Column */}
             <div className="space-y-4 lg:col-span-8">
-              {/* HERO VOICE CONSOLE IN FRONT / AT TOP */}
+              {/* HERO VOICE CONSOLE IN FRONT */}
               <VoiceCommandBar
                 onSendMessage={handleSendMessage}
                 loading={loading}
@@ -201,8 +234,8 @@ export default function Dashboard() {
                 setAutoSpeak={setAutoSpeak}
               />
 
-              {/* Chat Stream & Prompt Directory */}
-              <div className="glass-panel rounded-2xl p-5 min-h-[420px]">
+              {/* Chat Stream & Prompt Starter Directory */}
+              <div className="theme-card rounded-2xl p-4 sm:p-5 min-h-[420px]">
                 <ChatStream
                   messages={messages}
                   loading={loading}
@@ -216,29 +249,47 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Side Overview & Quick Status Cards */}
+            {/* Side Column: Clean Account Summary & Goals */}
             <div className="space-y-4 lg:col-span-4">
+              {/* Net Worth Summary Badge */}
+              {kpis && (
+                <div className="theme-card rounded-xl p-4">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                    Net Portfolio
+                  </span>
+                  <div className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
+                    ₹{kpis.netWorth.toLocaleString("en-IN")}
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
+                    <span>30D Outflow: ₹{kpis.totalExpense30Days.toLocaleString("en-IN")}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                      {kpis.savingsRatePct}% Savings
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Linked Accounts */}
-              <div className="glass-panel rounded-xl p-4">
+              <div className="theme-card rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                     Linked Accounts
                   </span>
-                  <Wallet className="h-3.5 w-3.5 text-zinc-400" />
+                  <Wallet className="h-3.5 w-3.5 text-slate-400" />
                 </div>
                 <div className="mt-3 space-y-2">
                   {accounts.map((a) => (
                     <div
                       key={a.key}
-                      className="flex items-center justify-between rounded-lg border border-white/[0.04] bg-surface-card p-2.5 text-xs"
+                      className="flex items-center justify-between rounded-lg border border-slate-100 dark:border-white/[0.04] bg-slate-50 dark:bg-zinc-900/60 p-2.5 text-xs"
                     >
                       <div>
-                        <div className="font-semibold text-white">{a.label}</div>
-                        <div className="font-mono text-[10px] capitalize text-zinc-500">
+                        <div className="font-semibold text-slate-900 dark:text-white">{a.label}</div>
+                        <div className="font-mono text-[10px] capitalize text-slate-400 dark:text-zinc-500">
                           {a.accountType}
                         </div>
                       </div>
-                      <span className="font-mono font-semibold text-zinc-200">
+                      <span className="font-mono font-semibold text-slate-800 dark:text-zinc-200">
                         ₹{a.balance.toLocaleString("en-IN")}
                       </span>
                     </div>
@@ -246,31 +297,31 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Financial Goals / Milestones */}
-              <div className="glass-panel rounded-xl p-4">
+              {/* Active Goals */}
+              <div className="theme-card rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                     Active Milestones
                   </span>
-                  <Target className="h-3.5 w-3.5 text-emerald-400" />
+                  <Target className="h-3.5 w-3.5 text-emerald-500" />
                 </div>
                 <div className="mt-3 space-y-2.5">
                   {goals.map((g) => {
                     const pct = Math.round((g.currentAmount / g.targetAmount) * 100);
                     return (
-                      <div key={g.id} className="rounded-lg border border-white/[0.04] bg-surface-card p-2.5 text-xs">
-                        <div className="flex justify-between font-semibold text-white">
+                      <div key={g.id} className="rounded-lg border border-slate-100 dark:border-white/[0.04] bg-slate-50 dark:bg-zinc-900/60 p-2.5 text-xs">
+                        <div className="flex justify-between font-semibold text-slate-900 dark:text-white">
                           <span>{g.category}</span>
-                          <span className="font-mono text-emerald-400">{pct}%</span>
+                          <span className="font-mono text-emerald-600 dark:text-emerald-400">{pct}%</span>
                         </div>
-                        <div className="mt-0.5 text-[10px] text-zinc-400">{g.description}</div>
-                        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-zinc-800">
+                        <div className="mt-0.5 text-[10px] text-slate-500 dark:text-zinc-400">{g.description}</div>
+                        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-zinc-800">
                           <div
                             className="h-full rounded-full bg-emerald-500 transition-all duration-500"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <div className="mt-1 flex justify-between font-mono text-[10px] text-zinc-500">
+                        <div className="mt-1 flex justify-between font-mono text-[10px] text-slate-400 dark:text-zinc-500">
                           <span>₹{g.currentAmount.toLocaleString("en-IN")}</span>
                           <span>Target: ₹{g.targetAmount.toLocaleString("en-IN")}</span>
                         </div>
@@ -280,23 +331,24 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Prompt Defense Shield Status */}
+              {/* Security Guard */}
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 text-xs">
-                <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
+                <div className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
                   <ShieldCheck className="h-3.5 w-3.5" />
                   <span>Prompt Injection Defense Active</span>
                 </div>
-                <p className="mt-1 text-[11px] text-zinc-400 leading-relaxed">
-                  Real-time regex filters protect against prompt leakage and unauthorized instructions.
+                <p className="mt-1 text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+                  Real-time pattern filters guard against unauthorized instruction overrides.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Tab 2: Financial Overview & Charts */}
+        {/* Tab 2: Financial Overview & KPIs */}
         {activeTab === "overview" && (
           <div className="space-y-5">
+            <KPICards kpis={kpis} />
             <SpendingCharts
               spendingByCategory={spendingByCategory}
               dailyTrend={dailyTrend}
@@ -324,7 +376,7 @@ export default function Dashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.06] bg-[#0A0C13] py-3.5 text-center text-xs text-zinc-500">
+      <footer className="border-t border-slate-200/80 dark:border-white/[0.06] bg-white dark:bg-[#0A0C13] py-3.5 text-center text-xs text-slate-500 dark:text-zinc-500 transition-colors">
         <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Voice Finance Buddy • Vercel Serverless Architecture</span>
           <span>Instant Edge Execution • 0 Cold Sleeps</span>

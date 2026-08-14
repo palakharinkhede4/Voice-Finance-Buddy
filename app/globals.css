@@ -3,11 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --background: #08090D;
-  --foreground: #F4F4F6;
-  --surface: #0E1017;
-  --surface-card: #12141C;
-  --border: rgba(255, 255, 255, 0.07);
+  --background: #F8F9FB;
+  --foreground: #0F172A;
+  --card-bg: #FFFFFF;
+  --card-hover: #F1F5F9;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --input-bg: #F1F5F9;
+  --input-border: rgba(0, 0, 0, 0.1);
+  --text-muted: #64748B;
+  --header-bg: rgba(255, 255, 255, 0.85);
+}
+
+.dark {
+  --background: #090A0E;
+  --foreground: #F8FAFC;
+  --card-bg: #11131A;
+  --card-hover: #161822;
+  --card-border: rgba(255, 255, 255, 0.07);
+  --card-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+  --input-bg: #151822;
+  --input-border: rgba(255, 255, 255, 0.08);
+  --text-muted: #94A3B8;
+  --header-bg: rgba(9, 10, 14, 0.88);
 }
 
 * {
@@ -19,9 +37,10 @@ body {
   color: var(--foreground);
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Custom subtle scrollbar */
+/* Subtle scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -32,41 +51,38 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(148, 163, 184, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(148, 163, 184, 0.4);
 }
 
-/* Modern Card with top-light highlight */
-.glass-panel {
-  background: #11131B;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 8px 24px -4px rgba(0, 0, 0, 0.4);
-}
-
-.glass-panel-hover {
+/* Modern Card style */
+.theme-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.glass-panel-hover:hover {
-  background: #151822;
-  border-color: rgba(255, 255, 255, 0.12);
+.theme-card-hover:hover {
+  background-color: var(--card-hover);
+  border-color: rgba(99, 102, 241, 0.3);
   transform: translateY(-1px);
 }
 
 /* Pulse mic recording glow */
 @keyframes mic-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.6);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
   }
   70% {
-    box-shadow: 0 0 0 16px rgba(244, 63, 94, 0);
+    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
   }
 }
 
@@ -74,10 +90,10 @@ body {
   animation: mic-pulse 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
 }
 
-/* Waveform animation bars */
+/* Waveform animation */
 @keyframes audio-bounce {
   0%, 100% { height: 6px; }
-  50% { height: 28px; }
+  50% { height: 26px; }
 }
 
 .wave-bar-1 { animation: audio-bounce 0.8s ease-in-out infinite; }

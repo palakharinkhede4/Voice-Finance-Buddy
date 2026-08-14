@@ -48,7 +48,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     },
     {
       category: "Tax",
-      label: "12 LPA Tax Comparison",
+      label: "Tax Comparison",
       query: "Compare Old vs New Tax Regime for 12 LPA salary",
       icon: Receipt,
     },
@@ -78,7 +78,6 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         stream.getTracks().forEach((track) => track.stop());
 
-        // Send to transcription endpoint
         const formData = new FormData();
         formData.append("file", audioBlob, "voice_recording.webm");
 
@@ -147,16 +146,16 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Hero Voice & Command Console Card */}
-      <div className="glass-panel rounded-2xl p-5 border border-white/[0.08]">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-3">
+      {/* Hero Voice Console Card */}
+      <div className="theme-card rounded-2xl p-4 sm:p-5">
+        <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
           {/* Voice Mic Hero Action */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3.5">
             {isRecording ? (
               <button
                 onClick={stopRecording}
-                className="mic-active-pulse flex h-12 items-center gap-3 rounded-xl bg-rose-600 px-5 text-xs font-semibold text-white shadow-glowRose transition hover:bg-rose-500"
+                className="mic-active-pulse flex h-11 items-center gap-2.5 rounded-xl bg-rose-600 px-4 text-xs font-semibold text-white transition hover:bg-rose-500 shadow-md"
               >
                 <MicOff className="h-4 w-4" />
                 <div className="flex items-center gap-1">
@@ -164,14 +163,13 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
                   <span className="h-4 w-1 rounded-full bg-white wave-bar-2" />
                   <span className="h-3 w-1 rounded-full bg-white wave-bar-3" />
                   <span className="h-5 w-1 rounded-full bg-white wave-bar-4" />
-                  <span className="h-2 w-1 rounded-full bg-white wave-bar-5" />
                 </div>
-                <span>Listening... Click to Send</span>
+                <span>Listening... Tap to Send</span>
               </button>
             ) : (
               <button
                 onClick={startRecording}
-                className="flex h-12 items-center gap-3 rounded-xl bg-indigo-600 px-5 text-xs font-semibold text-white shadow-glow transition hover:bg-indigo-500 active:scale-98"
+                className="flex h-11 items-center gap-2.5 rounded-xl bg-indigo-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 active:scale-98"
               >
                 <Mic className="h-4 w-4 text-white" />
                 <span>Tap to Speak</span>
@@ -179,8 +177,8 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             )}
 
             <div className="hidden sm:block text-xs">
-              <div className="font-semibold text-white">Voice Command Console</div>
-              <div className="text-[11px] text-zinc-400">Speak in English or Hindi/Hinglish</div>
+              <div className="font-semibold text-slate-800 dark:text-white">Voice Command Console</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">Ask questions naturally in English or Hindi</div>
             </div>
           </div>
 
@@ -191,30 +189,30 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
               title={autoSpeak ? "Spoken response is ON" : "Spoken response is MUTED"}
               className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${
                 autoSpeak
-                  ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"
-                  : "border-white/[0.06] bg-surface-card text-zinc-400 hover:text-zinc-200"
+                  ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
+                  : "border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
               {autoSpeak ? (
-                <Volume2 className="h-3.5 w-3.5 text-indigo-400" />
+                <Volume2 className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
               ) : (
                 <VolumeX className="h-3.5 w-3.5" />
               )}
-              <span>{autoSpeak ? "Voice Audio Active" : "Muted"}</span>
+              <span>{autoSpeak ? "Voice Audio On" : "Muted"}</span>
             </button>
           </div>
         </div>
 
-        {/* Text Query Input Field */}
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-surface-card px-3 py-1.5 focus-within:border-indigo-500/50 transition">
+        {/* Text Input Field */}
+        <div className="mt-3.5 flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900/80 px-3 py-1.5 focus-within:border-indigo-500/50 transition">
           <input
             type="text"
-            placeholder="Type your question or query (e.g. check balance, compare tax, calculate SIP)..."
+            placeholder="Type your question (e.g. check balance, compare tax, calculate SIP)..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={loading || isRecording}
-            className="flex-1 bg-transparent py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none disabled:opacity-50"
+            className="flex-1 bg-transparent py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none disabled:opacity-50"
           />
 
           <button
@@ -226,10 +224,10 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
           </button>
         </div>
 
-        {/* Organized Quick Action Chips */}
-        <div className="mt-3.5 flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-          <div className="flex items-center gap-1 text-[11px] font-medium text-zinc-500">
-            <Sparkles className="h-3 w-3 text-indigo-400" />
+        {/* Quick Action Chips */}
+        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mr-1">
+            <Sparkles className="h-3 w-3 text-indigo-500" />
             <span>Shortcuts:</span>
           </div>
 
@@ -239,9 +237,9 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
               <button
                 key={p.label}
                 onClick={() => onSendMessage(p.query)}
-                className="flex items-center gap-1.5 flex-shrink-0 rounded-lg border border-white/[0.06] bg-surface-card/80 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition hover:border-indigo-500/40 hover:bg-surface-hover hover:text-white"
+                className="flex items-center gap-1.5 flex-shrink-0 rounded-lg border border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-zinc-900/60 px-2.5 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 transition hover:border-indigo-500/40 hover:bg-slate-100 dark:hover:bg-zinc-800"
               >
-                <Icon className="h-3 w-3 text-indigo-400" />
+                <Icon className="h-3 w-3 text-indigo-500 dark:text-indigo-400" />
                 <span>{p.label}</span>
               </button>
             );
