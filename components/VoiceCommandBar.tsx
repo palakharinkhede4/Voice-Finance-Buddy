@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Mic, MicOff, Send, Volume2, VolumeX, Sparkles } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Send,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Wallet,
+  TrendingUp,
+  Receipt,
+  Target,
+} from "lucide-react";
 
 interface VoiceCommandBarProps {
   onSendMessage: (text: string) => void;
@@ -21,16 +32,35 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Suggested Prompts (No cheesy emojis)
-  const SUGGESTIONS = [
-    "What is my current total balance?",
-    "How much did I spend on food this month?",
-    "Compare Old vs New Tax Regime for 12 LPA",
-    "Calculate SIP returns for ₹5,000/mo at 12% for 10 yrs",
-    "Analyze my monthly budget status",
+  // Categorized Quick Prompts
+  const PROMPTS = [
+    {
+      category: "Balance",
+      label: "Account Balance",
+      query: "What is my total account balance across savings and checking?",
+      icon: Wallet,
+    },
+    {
+      category: "Expenses",
+      label: "Food Expenses",
+      query: "How much did I spend on food and dining this month?",
+      icon: Target,
+    },
+    {
+      category: "Tax",
+      label: "12 LPA Tax Comparison",
+      query: "Compare Old vs New Tax Regime for 12 LPA salary",
+      icon: Receipt,
+    },
+    {
+      category: "SIP",
+      label: "SIP Projection",
+      query: "Calculate SIP returns for ₹10,000 per month at 12% for 10 years",
+      icon: TrendingUp,
+    },
   ];
 
-  // Start Voice Recording
+  // Start Audio Recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -48,9 +78,9 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         stream.getTracks().forEach((track) => track.stop());
 
-        // Send to transcription API
+        // Send to transcription endpoint
         const formData = new FormData();
-        formData.append("file", audioBlob, "voice_command.webm");
+        formData.append("file", audioBlob, "voice_recording.webm");
 
         try {
           const res = await fetch("/api/transcribe", {
@@ -65,15 +95,14 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             }
           }
         } catch (err) {
-          console.warn("Audio transcription error:", err);
+          console.warn("Transcription request failed:", err);
         }
       };
 
       mediaRecorder.start();
       setIsRecording(true);
     } catch (err) {
-      console.warn("Microphone access failed or blocked:", err);
-      // Fallback: Web Speech Recognition API if available in browser
+      console.warn("Mic access blocked, attempting Web Speech API fallback:", err);
       if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -118,87 +147,106 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
   };
 
   return (
-    <div className="space-y-3">
-      {/* Quick Suggestion Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-        <span className="flex items-center gap-1 text-slate-500 text-[11px] font-medium mr-1">
-          <Sparkles className="h-3 w-3 text-indigo-400" />
-          <span>Quick:</span>
-        </span>
-        {SUGGESTIONS.map((s) => (
-          <button
-            key={s}
-            onClick={() => onSendMessage(s)}
-            className="flex-shrink-0 rounded-lg border border-white/[0.06] bg-surface-card px-2.5 py-1 text-[11px] text-slate-400 transition hover:border-indigo-500/30 hover:bg-surface-hover hover:text-slate-200"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      {/* Hero Voice & Command Console Card */}
+      <div className="glass-panel rounded-2xl p-5 border border-white/[0.08]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Voice Mic Hero Action */}
+          <div className="flex items-center gap-4">
+            {isRecording ? (
+              <button
+                onClick={stopRecording}
+                className="mic-active-pulse flex h-12 items-center gap-3 rounded-xl bg-rose-600 px-5 text-xs font-semibold text-white shadow-glowRose transition hover:bg-rose-500"
+              >
+                <MicOff className="h-4 w-4" />
+                <div className="flex items-center gap-1">
+                  <span className="h-2 w-1 rounded-full bg-white wave-bar-1" />
+                  <span className="h-4 w-1 rounded-full bg-white wave-bar-2" />
+                  <span className="h-3 w-1 rounded-full bg-white wave-bar-3" />
+                  <span className="h-5 w-1 rounded-full bg-white wave-bar-4" />
+                  <span className="h-2 w-1 rounded-full bg-white wave-bar-5" />
+                </div>
+                <span>Listening... Click to Send</span>
+              </button>
+            ) : (
+              <button
+                onClick={startRecording}
+                className="flex h-12 items-center gap-3 rounded-xl bg-indigo-600 px-5 text-xs font-semibold text-white shadow-glow transition hover:bg-indigo-500 active:scale-98"
+              >
+                <Mic className="h-4 w-4 text-white" />
+                <span>Tap to Speak</span>
+              </button>
+            )}
 
-      {/* Main Bar */}
-      <div className="glass-panel relative flex items-center gap-2 rounded-2xl p-2 shadow-2xl">
-        {/* Voice Recording Waveform or Mic Button */}
-        {isRecording ? (
-          <button
-            onClick={stopRecording}
-            className="flex h-11 items-center gap-2 rounded-xl bg-rose-600 px-4 text-xs font-semibold text-white shadow-glow transition hover:bg-rose-500"
-          >
-            <MicOff className="h-4 w-4" />
-            <div className="flex items-center gap-1">
-              <span className="h-2 w-1 bg-white animate-wave-1 rounded-full"></span>
-              <span className="h-4 w-1 bg-white animate-wave-2 rounded-full"></span>
-              <span className="h-3 w-1 bg-white animate-wave-3 rounded-full"></span>
-              <span className="h-5 w-1 bg-white animate-wave-4 rounded-full"></span>
+            <div className="hidden sm:block text-xs">
+              <div className="font-semibold text-white">Voice Command Console</div>
+              <div className="text-[11px] text-zinc-400">Speak in English or Hindi/Hinglish</div>
             </div>
-            <span>Listening...</span>
-          </button>
-        ) : (
+          </div>
+
+          {/* Controls: Auto-speech audio toggle */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setAutoSpeak(!autoSpeak)}
+              title={autoSpeak ? "Spoken response is ON" : "Spoken response is MUTED"}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${
+                autoSpeak
+                  ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"
+                  : "border-white/[0.06] bg-surface-card text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              {autoSpeak ? (
+                <Volume2 className="h-3.5 w-3.5 text-indigo-400" />
+              ) : (
+                <VolumeX className="h-3.5 w-3.5" />
+              )}
+              <span>{autoSpeak ? "Voice Audio Active" : "Muted"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Text Query Input Field */}
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-surface-card px-3 py-1.5 focus-within:border-indigo-500/50 transition">
+          <input
+            type="text"
+            placeholder="Type your question or query (e.g. check balance, compare tax, calculate SIP)..."
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={loading || isRecording}
+            className="flex-1 bg-transparent py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none disabled:opacity-50"
+          />
+
           <button
-            onClick={startRecording}
-            title="Start voice recording"
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-glow transition hover:bg-indigo-500"
+            onClick={handleSend}
+            disabled={!inputText.trim() || loading}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white transition hover:bg-indigo-500 disabled:opacity-30"
           >
-            <Mic className="h-4 w-4" />
+            <Send className="h-3.5 w-3.5" />
           </button>
-        )}
+        </div>
 
-        {/* Text Input */}
-        <input
-          type="text"
-          placeholder="Ask anything about balance, expenses, SIP returns, or taxes..."
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={loading || isRecording}
-          className="flex-1 bg-transparent px-3 text-xs text-white placeholder-slate-500 focus:outline-none disabled:opacity-50"
-        />
+        {/* Organized Quick Action Chips */}
+        <div className="mt-3.5 flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+          <div className="flex items-center gap-1 text-[11px] font-medium text-zinc-500">
+            <Sparkles className="h-3 w-3 text-indigo-400" />
+            <span>Shortcuts:</span>
+          </div>
 
-        {/* Auto Speech Synthesis Toggle */}
-        <button
-          onClick={() => setAutoSpeak(!autoSpeak)}
-          title={autoSpeak ? "Spoken response is enabled" : "Spoken response is muted"}
-          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border transition ${
-            autoSpeak
-              ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"
-              : "border-white/[0.06] bg-surface-card text-slate-500 hover:text-slate-300"
-          }`}
-        >
-          {autoSpeak ? (
-            <Volume2 className="h-4 w-4" />
-          ) : (
-            <VolumeX className="h-4 w-4" />
-          )}
-        </button>
-
-        {/* Send Button */}
-        <button
-          onClick={handleSend}
-          disabled={!inputText.trim() || loading}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white transition hover:bg-indigo-500 disabled:opacity-40"
-        >
-          <Send className="h-4 w-4" />
-        </button>
+          {PROMPTS.map((p) => {
+            const Icon = p.icon;
+            return (
+              <button
+                key={p.label}
+                onClick={() => onSendMessage(p.query)}
+                className="flex items-center gap-1.5 flex-shrink-0 rounded-lg border border-white/[0.06] bg-surface-card/80 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition hover:border-indigo-500/40 hover:bg-surface-hover hover:text-white"
+              >
+                <Icon className="h-3 w-3 text-indigo-400" />
+                <span>{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
