@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     let lastProviderError = "";
 
-    // ── 1. Try Google Gemini Multimodal Audio STT (Fastest & Best for Multilingual) ──
+    // ── 1. Try Google Gemini Multimodal Audio STT (Gemini 2.0 Flash Lite & Flash Models) ──
     if (geminiKey && geminiKey.length > 5) {
       try {
         const arrayBuffer = await file.arrayBuffer();
@@ -35,57 +35,75 @@ export async function POST(req: NextRequest) {
         const rawMime = file.type || "audio/webm";
         const cleanMime = rawMime.split(";")[0].trim() || "audio/webm";
 
-        // Try gemini-2.0-flash, then fallback to gemini-1.5-flash
-        const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash"];
+        const customModel = process.env.ARTHBOT_TRANSCRIBE_MODEL || process.env.GEMINI_MODEL;
+        const modelsToTry = [
+          customModel,
+          "gemini-2.0-flash-lite",
+          "gemini-2.0-flash-lite-preview-02-05",
+          "gemini-2.0-flash",
+          "gemini-2.5-flash",
+          "gemini-1.5-flash-latest",
+          "gemini-1.5-flash-8b",
+        ].filter(Boolean) as string[];
+
         for (const model of modelsToTry) {
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
+          const apiVersions = ["v1beta", "v1"];
+          for (const apiVer of apiVersions) {
+            try {
+              const geminiRes = await fetch(
+                `https://generativelanguage.googleapis.com/${apiVer}/models/${model}:generateContent?key=${geminiKey}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    contents: [
                       {
-                        text: "You are a speech-to-text transcriber for a personal finance app. Transcribe the spoken audio verbatim in English or Hindi/Hinglish. Output ONLY the transcribed query text, nothing else.",
-                      },
-                      {
-                        inline_data: {
-                          mime_type: cleanMime,
-                          data: base64Audio,
-                        },
+                        parts: [
+                          {
+                            text: "You are a speech-to-text transcriber for an Indian personal finance app. Transcribe the spoken audio verbatim in English or Hindi/Hinglish. Output ONLY the exact query text spoken, with no markdown, quotes, explanations, or metadata.",
+                          },
+                          {
+                            inline_data: {
+                              mime_type: cleanMime,
+                              data: base64Audio,
+                            },
+                          },
+                        ],
                       },
                     ],
-                  },
-                ],
-                generationConfig: {
-                  temperature: 0.0,
-                  maxOutputTokens: 200,
-                },
-              }),
-            }
-          );
+                    generationConfig: {
+                      temperature: 0.0,
+                      maxOutputTokens: 200,
+                    },
+                  }),
+                }
+              );
 
-          if (geminiRes.ok) {
-            const geminiData = await geminiRes.json();
-            const transcript =
-              geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-            if (transcript) {
-              return NextResponse.json({
-                transcript,
-                engine: `Google Gemini (${model}) Audio`,
-              });
+              if (geminiRes.ok) {
+                const geminiData = await geminiRes.json();
+                const transcript =
+                  geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+                if (transcript) {
+                  return NextResponse.json({
+                    transcript,
+                    engine: `Google Gemini (${model}) Audio`,
+                  });
+                }
+              } else {
+                const errText = await geminiRes.text();
+                if (geminiRes.status !== 404) {
+                  console.warn(`Gemini (${model} / ${apiVer}) error ${geminiRes.status}:`, errText);
+                }
+                lastProviderError = `Gemini (${model}): ${errText.slice(0, 150)}`;
+              }
+            } catch (fetchErr) {
+              console.warn(`Gemini request failed for ${model}:`, fetchErr);
             }
-          } else {
-            const errText = await geminiRes.text();
-            console.warn(`Gemini (${model}) returned status ${geminiRes.status}:`, errText);
-            lastProviderError = `Gemini API (${geminiRes.status}): ${errText.slice(0, 150)}`;
           }
         }
       } catch (err) {
-        console.warn("Gemini audio transcription error:", err);
-        lastProviderError = `Gemini connection error: ${err instanceof Error ? err.message : String(err)}`;
+        console.warn("Gemini audio transcription processing error:", err);
+        lastProviderError = `Gemini audio error: ${err instanceof Error ? err.message : String(err)}`;
       }
     }
 

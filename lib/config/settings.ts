@@ -30,9 +30,9 @@ export function getSettings(): Settings {
   } else if (geminiKey) {
     apiKey = geminiKey;
     baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai/";
-    providerName = "Google Gemini (3.5 Flash)";
-    chatModel = process.env.ARTHBOT_CHAT_MODEL || "gemini-2.0-flash";
-    transcribeModel = process.env.ARTHBOT_TRANSCRIBE_MODEL || "whisper-1";
+    providerName = "Google Gemini (Flash Lite)";
+    chatModel = process.env.ARTHBOT_CHAT_MODEL || "gemini-2.0-flash-lite";
+    transcribeModel = process.env.ARTHBOT_TRANSCRIBE_MODEL || "gemini-2.0-flash-lite";
   } else if (openaiKey) {
     apiKey = openaiKey;
     baseUrl = undefined;
