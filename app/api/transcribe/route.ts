@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
         const customModel = process.env.ARTHBOT_TRANSCRIBE_MODEL || process.env.GEMINI_MODEL;
         const modelsToTry = [
           customModel,
+          "gemini-3.5-flash-lite",
+          "gemini-3.5-flash",
           "gemini-2.0-flash-lite",
           "gemini-2.0-flash-lite-preview-02-05",
           "gemini-2.0-flash",
