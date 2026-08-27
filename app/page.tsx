@@ -110,29 +110,47 @@ export default function Dashboard() {
   // Speech synthesis helper
   const speakText = (text: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
+    try {
+      window.speechSynthesis.cancel();
 
-    const cleanText = text
-      .replace(/[#*_`~-]/g, " ")
-      .replace(/₹/g, "Rupees ")
-      .replace(/\s+/g, " ")
-      .trim();
+      const cleanText = text
+        .replace(/[#*_`~-]/g, " ")
+        .replace(/₹/g, "Rupees ")
+        .replace(/\s+/g, " ")
+        .trim();
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 1.05;
-    utterance.pitch = 1.0;
-    utterance.lang = "en-IN";
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.lang = "en-IN";
 
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice =
-      voices.find((v) => v.lang.includes("en-IN") || v.name.includes("Google") || v.name.includes("Natural")) ||
-      voices[0];
+      const loadAndSpeak = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          const preferredVoice =
+            voices.find((v) => v.lang.includes("en-IN") || v.name.includes("India")) ||
+            voices.find((v) => v.lang.includes("en-GB") || v.name.includes("Google") || v.name.includes("Natural")) ||
+            voices.find((v) => v.lang.startsWith("en")) ||
+            voices[0];
 
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+          if (preferredVoice) {
+            utterance.voice = preferredVoice;
+          }
+        }
+        window.speechSynthesis.speak(utterance);
+      };
+
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          loadAndSpeak();
+          window.speechSynthesis.onvoiceschanged = null;
+        };
+      } else {
+        loadAndSpeak();
+      }
+    } catch (err) {
+      console.warn("Speech synthesis error:", err);
     }
-
-    window.speechSynthesis.speak(utterance);
   };
 
   // Handle incoming user query

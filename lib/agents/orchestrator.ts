@@ -56,15 +56,29 @@ export function classifyIntent(query: string): AgentType {
 
   // Multi-domain / Planning
   if (
-    q.includes("plan") ||
-    q.includes("strategy") ||
     q.includes("financial health") ||
     q.includes("review") ||
     q.includes("kya karu") ||
-    q.includes("advice") ||
-    q.includes("guide me")
+    q.includes("financial advice") ||
+    q.includes("guide me") ||
+    q.includes("wealth plan")
   ) {
     return "planner";
+  }
+
+  // Account / Balance / Ledger Operations (High priority)
+  if (
+    q.includes("balance") ||
+    q.includes("account") ||
+    q.includes("passbook") ||
+    q.includes("transaction") ||
+    q.includes("spent on") ||
+    q.includes("how much did i spend") ||
+    q.includes("kitna kharch") ||
+    q.includes("debit") ||
+    q.includes("credit")
+  ) {
+    return "expense";
   }
 
   // Tax
@@ -223,9 +237,17 @@ export async function processFinanceQuery(
     payload = { budgetStatuses, kpis, goals };
   } else if (agentType === "investment") {
     // Check for SIP calculation in query
-    const sipMatch = qLower.match(/(\d+)\s*(k|thousand|lakh|l)?.*(?:sip|month|per month)/i) || qLower.match(/sip.*(\d+)/i);
-    if (sipMatch || qLower.includes("sip")) {
-      const amount = sipMatch ? parseInt(sipMatch[1], 10) * (sipMatch[2]?.toLowerCase() === "k" ? 1000 : 1) : 5000;
+    const cleanQ = qLower.replace(/,/g, "");
+    const sipMatch = cleanQ.match(/(\d+(?:\.\d+)?)\s*(k|thousand|lakh|l)?.*(?:sip|month|per month)/i) || cleanQ.match(/sip.*?(\d+(?:\.\d+)?)\s*(k|thousand|lakh|l)?/i);
+    if (sipMatch || cleanQ.includes("sip")) {
+      let amount = 5000;
+      if (sipMatch) {
+        const num = parseFloat(sipMatch[1]);
+        const unit = (sipMatch[2] || "").toLowerCase();
+        if (unit === "k" || unit === "thousand") amount = num * 1000;
+        else if (unit === "lakh" || unit === "l") amount = num * 100000;
+        else amount = num;
+      }
       const sipRes = calculateSIPReturns(amount || 5000, 12, 10);
       tools.push({
         name: "calculate_sip_returns",
@@ -237,9 +259,18 @@ export async function processFinanceQuery(
     }
 
     // Check for EMI calculation
-    const emiMatch = qLower.match(/(\d+)\s*(lakh|l|crore|cr|k)?.*(?:emi|loan)/i) || qLower.match(/emi.*(\d+)/i);
-    if (emiMatch || qLower.includes("emi") || qLower.includes("loan")) {
-      const p = emiMatch ? 2500000 : 1000000;
+    const emiMatch = cleanQ.match(/(\d+(?:\.\d+)?)\s*(lakh|l|crore|cr|k)?.*(?:emi|loan)/i) || cleanQ.match(/emi.*?(\d+(?:\.\d+)?)/i);
+    if (emiMatch || cleanQ.includes("emi") || cleanQ.includes("loan")) {
+      let p = 2500000;
+      if (emiMatch) {
+        const num = parseFloat(emiMatch[1]);
+        const unit = (emiMatch[2] || "").toLowerCase();
+        if (unit === "crore" || unit === "cr") p = num * 10000000;
+        else if (unit === "lakh" || unit === "l") p = num * 100000;
+        else if (unit === "k") p = num * 1000;
+        else if (num < 100) p = num * 100000;
+        else p = num;
+      }
       const emiRes = calculateEMI(p, 8.5, 240);
       tools.push({
         name: "calculate_emi",

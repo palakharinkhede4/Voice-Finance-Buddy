@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Mic,
   MicOff,
@@ -12,6 +12,10 @@ import {
   TrendingUp,
   Receipt,
   Target,
+  AlertCircle,
+  X,
+  Radio,
+  Globe,
 } from "lucide-react";
 
 interface VoiceCommandBarProps {
@@ -29,8 +33,28 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
 }) => {
   const [inputText, setInputText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [interimText, setInterimText] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedLang, setSelectedLang] = useState<string>("en-IN");
+  const [hasSpeechRecognition, setHasSpeechRecognition] = useState(false);
+
+  // References for Web Speech API & MediaRecorder
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check browser speech recognition support
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hasRec = Boolean(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      );
+      setHasSpeechRecognition(hasRec);
+    }
+  }, []);
 
   // Categorized Quick Prompts
   const PROMPTS = [
@@ -60,8 +84,126 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     },
   ];
 
-  // Start Audio Recording
+  // Stop recording / speech recognition
+  const stopRecording = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
+
+    if (mediaRecorderRef.current && isRecording) {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
+
+    setIsRecording(false);
+  };
+
+  // Start Audio Recording / Recognition
   const startRecording = async () => {
+    setErrorMessage(null);
+    setInterimText("");
+
+    // Option 1: Native Browser Web Speech API (Primary for Chrome, Edge, Safari, Android)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRec = typeof window !== "undefined" && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+    if (SpeechRec) {
+      try {
+        const recognition = new SpeechRec();
+        recognitionRef.current = recognition;
+        recognition.lang = selectedLang;
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          setIsRecording(true);
+          setErrorMessage(null);
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recognition.onresult = (event: any) => {
+          let currentInterim = "";
+          let finalTranscript = "";
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const item = event.results[i];
+            if (item.isFinal) {
+              finalTranscript += item[0].transcript;
+            } else {
+              currentInterim += item[0].transcript;
+            }
+          }
+
+          const liveText = finalTranscript || currentInterim;
+          if (liveText) {
+            setInterimText(liveText);
+          }
+
+          if (finalTranscript.trim()) {
+            const queryToSend = finalTranscript.trim();
+            setInputText(queryToSend);
+            setIsRecording(false);
+            setInterimText("");
+            onSendMessage(queryToSend);
+          }
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recognition.onerror = (event: any) => {
+          const errType = event.error;
+          setIsRecording(false);
+
+          if (errType === "no-speech") {
+            setErrorMessage("No speech was detected. Please try speaking again.");
+          } else if (errType === "not-allowed" || errType === "permission-denied") {
+            setErrorMessage("Microphone access was denied. Please allow microphone permissions in your browser address bar.");
+          } else if (errType === "audio-capture") {
+            setErrorMessage("No microphone found. Please check your audio input device.");
+          } else if (errType === "network") {
+            setErrorMessage("Speech recognition network error. Please try again or type your query.");
+          } else {
+            setErrorMessage(`Speech recognition error: ${errType || "Unable to capture audio."}`);
+          }
+        };
+
+        recognition.onend = () => {
+          setIsRecording(false);
+        };
+
+        recognition.start();
+
+        // Safety timeout after 15 seconds
+        timeoutRef.current = setTimeout(() => {
+          if (recognitionRef.current) {
+            try {
+              recognitionRef.current.stop();
+            } catch {
+              // ignore
+            }
+          }
+          setIsRecording(false);
+        }, 15000);
+
+        return;
+      } catch (err) {
+        console.warn("Failed to initialize Web Speech API, attempting MediaRecorder fallback:", err);
+      }
+    }
+
+    // Option 2: Fallback MediaRecorder + /api/transcribe
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
@@ -87,48 +229,35 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             body: formData,
           });
 
-          if (res.ok) {
-            const data = await res.json();
-            if (data.transcript) {
-              onSendMessage(data.transcript);
-            }
+          const data = await res.json();
+
+          if (res.ok && data.transcript && data.transcript.trim()) {
+            const text = data.transcript.trim();
+            setInputText(text);
+            onSendMessage(text);
+          } else {
+            setErrorMessage(
+              data.error ||
+                "Speech could not be transcribed. Please speak clearly or type your question in the text bar."
+            );
           }
         } catch (err) {
           console.warn("Transcription request failed:", err);
+          setErrorMessage("Failed to send audio for transcription. Please check connection.");
+        } finally {
+          setIsRecording(false);
+          setInterimText("");
         }
       };
 
       mediaRecorder.start();
       setIsRecording(true);
     } catch (err) {
-      console.warn("Mic access blocked, attempting Web Speech API fallback:", err);
-      if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        const recognition = new SpeechRec();
-        recognition.lang = "en-IN";
-        recognition.interimResults = false;
-
-        recognition.onstart = () => setIsRecording(true);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          if (transcript) {
-            onSendMessage(transcript);
-          }
-          setIsRecording(false);
-        };
-        recognition.onerror = () => setIsRecording(false);
-        recognition.onend = () => setIsRecording(false);
-        recognition.start();
-      }
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      console.warn("Microphone access failed:", err);
       setIsRecording(false);
+      setErrorMessage(
+        "Microphone access blocked or unavailable. Please enable microphone permissions in your browser."
+      );
     }
   };
 
@@ -136,6 +265,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     if (!inputText.trim() || loading) return;
     onSendMessage(inputText.trim());
     setInputText("");
+    setInterimText("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -148,46 +278,92 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
   return (
     <div className="space-y-3">
       {/* Hero Voice Console Card */}
-      <div className="theme-card rounded-2xl p-4 sm:p-5">
+      <div className="theme-card rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-white/[0.08] shadow-sm">
+        {/* Error Notification Banner */}
+        {errorMessage && (
+          <div className="mb-3.5 flex items-center justify-between gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-600 dark:text-rose-400">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="rounded p-1 hover:bg-rose-500/20 text-rose-500 transition"
+              title="Dismiss error"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
           {/* Voice Mic Hero Action */}
           <div className="flex items-center gap-3.5">
             {isRecording ? (
               <button
                 onClick={stopRecording}
-                className="mic-active-pulse flex h-11 items-center gap-2.5 rounded-xl bg-rose-600 px-4 text-xs font-semibold text-white transition hover:bg-rose-500 shadow-md"
+                className="mic-active-pulse flex h-11 items-center gap-2.5 rounded-xl bg-rose-600 px-4 text-xs font-semibold text-white transition hover:bg-rose-500 shadow-md active:scale-98"
               >
-                <MicOff className="h-4 w-4" />
+                <MicOff className="h-4 w-4 animate-pulse" />
                 <div className="flex items-center gap-1">
                   <span className="h-2 w-1 rounded-full bg-white wave-bar-1" />
                   <span className="h-4 w-1 rounded-full bg-white wave-bar-2" />
                   <span className="h-3 w-1 rounded-full bg-white wave-bar-3" />
                   <span className="h-5 w-1 rounded-full bg-white wave-bar-4" />
                 </div>
-                <span>Listening... Tap to Send</span>
+                <span>Listening... Tap to Finish</span>
               </button>
             ) : (
               <button
                 onClick={startRecording}
-                className="flex h-11 items-center gap-2.5 rounded-xl bg-indigo-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 active:scale-98"
+                disabled={loading}
+                className="flex h-11 items-center gap-2.5 rounded-xl bg-indigo-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 active:scale-98 disabled:opacity-50"
               >
                 <Mic className="h-4 w-4 text-white" />
                 <span>Tap to Speak</span>
               </button>
             )}
 
-            <div className="hidden sm:block text-xs">
-              <div className="font-semibold text-slate-800 dark:text-white">Voice Command Console</div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">Ask questions naturally in English or Hindi</div>
+            <div className="text-xs">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-white">
+                <span>Voice Command Console</span>
+                {hasSpeechRecognition && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                    <Radio className="h-2.5 w-2.5 animate-pulse" />
+                    <span>Real-time</span>
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                {isRecording
+                  ? "Speak your query naturally (e.g. what is my balance, compare tax)..."
+                  : "Instant voice recognition in English or Hindi"}
+              </div>
             </div>
           </div>
 
-          {/* Controls: Auto-speech audio toggle */}
+          {/* Controls: Language & Audio toggle */}
           <div className="flex items-center gap-2">
+            {/* Language Selector */}
+            <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 px-2 py-1.5 text-xs text-slate-600 dark:text-slate-300">
+              <Globe className="h-3.5 w-3.5 text-slate-400" />
+              <select
+                value={selectedLang}
+                onChange={(e) => setSelectedLang(e.target.value)}
+                className="bg-transparent text-[11px] font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                title="Select recognition language"
+              >
+                <option value="en-IN" className="dark:bg-zinc-900">EN (India)</option>
+                <option value="hi-IN" className="dark:bg-zinc-900">HI (Hindi)</option>
+                <option value="en-US" className="dark:bg-zinc-900">EN (US)</option>
+              </select>
+            </div>
+
+            {/* Auto-speech audio toggle */}
             <button
               onClick={() => setAutoSpeak(!autoSpeak)}
-              title={autoSpeak ? "Spoken response is ON" : "Spoken response is MUTED"}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${
+              title={autoSpeak ? "Spoken audio playback is ON" : "Spoken audio playback is MUTED"}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                 autoSpeak
                   ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
                   : "border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -203,11 +379,22 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
           </div>
         </div>
 
+        {/* Live Audio Transcript Preview during speech */}
+        {isRecording && (
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/5 px-3 py-2 text-xs text-indigo-900 dark:text-indigo-200 animate-fadeIn">
+            <Radio className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse flex-shrink-0" />
+            <span className="font-semibold text-indigo-600 dark:text-indigo-400">Hearing:</span>
+            <span className="italic font-medium text-slate-700 dark:text-slate-200 truncate">
+              {interimText || "Listening for your voice..."}
+            </span>
+          </div>
+        )}
+
         {/* Text Input Field */}
         <div className="mt-3.5 flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900/80 px-3 py-1.5 focus-within:border-indigo-500/50 transition">
           <input
             type="text"
-            placeholder="Type your question (e.g. check balance, compare tax, calculate SIP)..."
+            placeholder="Type your question (e.g. what is my balance, compare tax, calculate SIP)..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -219,6 +406,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             onClick={handleSend}
             disabled={!inputText.trim() || loading}
             className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white transition hover:bg-indigo-500 disabled:opacity-30"
+            title="Send query"
           >
             <Send className="h-3.5 w-3.5" />
           </button>
@@ -226,7 +414,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
 
         {/* Quick Action Chips */}
         <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mr-1">
+          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mr-1 flex-shrink-0">
             <Sparkles className="h-3 w-3 text-indigo-500" />
             <span>Shortcuts:</span>
           </div>
