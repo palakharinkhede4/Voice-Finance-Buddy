@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Mic,
   MicOff,
@@ -16,6 +16,8 @@ import {
   X,
   Radio,
   Globe,
+  SlidersHorizontal,
+  Info,
 } from "lucide-react";
 
 interface VoiceCommandBarProps {
@@ -35,23 +37,24 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [selectedLang, setSelectedLang] = useState<string>("en-IN");
   const [hasSpeechRecognition, setHasSpeechRecognition] = useState(false);
+  const [forceMediaRecorder, setForceMediaRecorder] = useState(false);
 
-  // References for Web Speech API & MediaRecorder
+  // References
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Check browser speech recognition support
+  // Detect browser speech recognition support
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const hasRec = Boolean(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hasRec = Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
       setHasSpeechRecognition(hasRec);
     }
   }, []);
@@ -84,8 +87,8 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     },
   ];
 
-  // Stop recording / speech recognition
-  const stopRecording = () => {
+  // Stop Recording / Recognition helper
+  const stopRecording = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -99,7 +102,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
       }
     }
 
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       try {
         mediaRecorderRef.current.stop();
       } catch {
@@ -107,15 +110,107 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
       }
     }
 
-    setIsRecording(false);
-  };
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
 
-  // Start Audio Recording / Recognition
+    setIsRecording(false);
+  }, []);
+
+  // Option B: MediaRecorder Microphone Stream Recording
+  const startMediaRecorder = useCallback(async (customInfo?: string) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : MediaRecorder.isTypeSupported("audio/mp4")
+          ? "audio/mp4"
+          : undefined,
+      });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: mediaRecorder.mimeType || "audio/webm",
+        });
+
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
+
+        const formData = new FormData();
+        formData.append("file", audioBlob, "recording.webm");
+
+        try {
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.transcript && data.transcript.trim()) {
+            const text = data.transcript.trim();
+            setInputText(text);
+            setInterimText("");
+            setErrorMessage(null);
+            setInfoMessage(null);
+            onSendMessage(text);
+          } else {
+            setErrorMessage(
+              data.error ||
+                "Could not transcribe audio. Please type your query in the input field or check API key."
+            );
+          }
+        } catch (err) {
+          console.warn("Transcription API error:", err);
+          setErrorMessage("Failed to send audio for transcription. Please check your connection.");
+        } finally {
+          setIsRecording(false);
+          setInterimText("");
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setErrorMessage(null);
+      if (customInfo) {
+        setInfoMessage(customInfo);
+      }
+    } catch (err) {
+      console.warn("Microphone access failed:", err);
+      setIsRecording(false);
+      setErrorMessage(
+        "Microphone access blocked or unavailable. Please enable microphone permissions in your browser address bar."
+      );
+    }
+  }, [onSendMessage]);
+
+  // Main Record Action
   const startRecording = async () => {
     setErrorMessage(null);
+    setInfoMessage(null);
     setInterimText("");
 
-    // Option 1: Native Browser Web Speech API (Primary for Chrome, Edge, Safari, Android)
+    // If forced to MediaRecorder or Web Speech not available, use MediaRecorder
+    if (forceMediaRecorder || !hasSpeechRecognition) {
+      startMediaRecorder();
+      return;
+    }
+
+    // Option A: Native Browser Web Speech API
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRec = typeof window !== "undefined" && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
@@ -164,6 +259,19 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         recognition.onerror = (event: any) => {
           const errType = event.error;
+          console.warn("Speech recognition error:", errType);
+
+          if (errType === "network") {
+            // Google Speech Service blocked (e.g. Brave browser or adblock/firewall)
+            // Seamlessly fall back to MediaRecorder audio capture immediately!
+            setForceMediaRecorder(true);
+            stopRecording();
+            startMediaRecorder(
+              "Google speech service blocked in browser. Automatically switched to Microphone Audio mode."
+            );
+            return;
+          }
+
           setIsRecording(false);
 
           if (errType === "no-speech") {
@@ -172,10 +280,8 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             setErrorMessage("Microphone access was denied. Please allow microphone permissions in your browser address bar.");
           } else if (errType === "audio-capture") {
             setErrorMessage("No microphone found. Please check your audio input device.");
-          } else if (errType === "network") {
-            setErrorMessage("Speech recognition network error. Please try again or type your query.");
           } else {
-            setErrorMessage(`Speech recognition error: ${errType || "Unable to capture audio."}`);
+            setErrorMessage(`Speech recognition notice: ${errType || "Unable to capture audio"}. Try typing your query.`);
           }
         };
 
@@ -199,65 +305,12 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
 
         return;
       } catch (err) {
-        console.warn("Failed to initialize Web Speech API, attempting MediaRecorder fallback:", err);
+        console.warn("Web Speech API init failed, switching to MediaRecorder:", err);
+        setForceMediaRecorder(true);
+        startMediaRecorder();
       }
-    }
-
-    // Option 2: Fallback MediaRecorder + /api/transcribe
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        stream.getTracks().forEach((track) => track.stop());
-
-        const formData = new FormData();
-        formData.append("file", audioBlob, "voice_recording.webm");
-
-        try {
-          const res = await fetch("/api/transcribe", {
-            method: "POST",
-            body: formData,
-          });
-
-          const data = await res.json();
-
-          if (res.ok && data.transcript && data.transcript.trim()) {
-            const text = data.transcript.trim();
-            setInputText(text);
-            onSendMessage(text);
-          } else {
-            setErrorMessage(
-              data.error ||
-                "Speech could not be transcribed. Please speak clearly or type your question in the text bar."
-            );
-          }
-        } catch (err) {
-          console.warn("Transcription request failed:", err);
-          setErrorMessage("Failed to send audio for transcription. Please check connection.");
-        } finally {
-          setIsRecording(false);
-          setInterimText("");
-        }
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.warn("Microphone access failed:", err);
-      setIsRecording(false);
-      setErrorMessage(
-        "Microphone access blocked or unavailable. Please enable microphone permissions in your browser."
-      );
+    } else {
+      startMediaRecorder();
     }
   };
 
@@ -279,6 +332,23 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     <div className="space-y-3">
       {/* Hero Voice Console Card */}
       <div className="theme-card rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-white/[0.08] shadow-sm">
+        {/* Info Banner */}
+        {infoMessage && (
+          <div className="mb-3.5 flex items-center justify-between gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3.5 py-2.5 text-xs text-indigo-600 dark:text-indigo-300">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 flex-shrink-0" />
+              <span>{infoMessage}</span>
+            </div>
+            <button
+              onClick={() => setInfoMessage(null)}
+              className="rounded p-1 hover:bg-indigo-500/20 text-indigo-500 transition"
+              title="Dismiss note"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Error Notification Banner */}
         {errorMessage && (
           <div className="mb-3.5 flex items-center justify-between gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-600 dark:text-rose-400">
@@ -327,12 +397,23 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             <div className="text-xs">
               <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-white">
                 <span>Voice Command Console</span>
-                {hasSpeechRecognition && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                    <Radio className="h-2.5 w-2.5 animate-pulse" />
-                    <span>Real-time</span>
+                <button
+                  onClick={() => setForceMediaRecorder(!forceMediaRecorder)}
+                  title="Click to toggle between Browser Web Speech and Microphone Audio capture modes"
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition cursor-pointer ${
+                    !forceMediaRecorder && hasSpeechRecognition
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+                      : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20"
+                  }`}
+                >
+                  <Radio className="h-2.5 w-2.5 animate-pulse" />
+                  <span>
+                    {!forceMediaRecorder && hasSpeechRecognition
+                      ? "Web Speech (Live)"
+                      : "Mic Audio Mode"}
                   </span>
-                )}
+                  <SlidersHorizontal className="h-2.5 w-2.5 ml-0.5 opacity-60" />
+                </button>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400">
                 {isRecording
@@ -385,7 +466,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             <Radio className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse flex-shrink-0" />
             <span className="font-semibold text-indigo-600 dark:text-indigo-400">Hearing:</span>
             <span className="italic font-medium text-slate-700 dark:text-slate-200 truncate">
-              {interimText || "Listening for your voice..."}
+              {interimText || "Listening for your voice... Tap finish when done"}
             </span>
           </div>
         )}
