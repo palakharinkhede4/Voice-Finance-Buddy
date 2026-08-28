@@ -114,84 +114,143 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
     );
   }
 
+  // Group messages into Question & Answer exchanges
+  type Exchange = {
+    id: string;
+    userMessage?: ChatMessage;
+    assistantMessage?: ChatMessage;
+  };
+
+  const exchanges: Exchange[] = [];
+  let currentExchange: Exchange | null = null;
+
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    if (msg.role === "user") {
+      if (currentExchange) {
+        exchanges.push(currentExchange);
+      }
+      currentExchange = {
+        id: msg.id,
+        userMessage: msg,
+      };
+    } else if (msg.role === "assistant") {
+      if (currentExchange) {
+        currentExchange.assistantMessage = msg;
+        exchanges.push(currentExchange);
+        currentExchange = null;
+      } else {
+        exchanges.push({
+          id: msg.id,
+          assistantMessage: msg,
+        });
+      }
+    }
+  }
+  if (currentExchange) {
+    exchanges.push(currentExchange);
+  }
+
+  // Reverse so the latest Q&A exchange is always on top
+  const reversedExchanges = [...exchanges].reverse();
+
   return (
-    <div className="space-y-4">
-      {messages.map((msg) => {
-        const isUser = msg.role === "user";
-        const isThisMessageSpeaking = isSpeaking && currentlySpeakingId === msg.id;
+    <div className="space-y-6">
+      {reversedExchanges.map((exchange, index) => {
+        const isLatest = index === 0;
+        const isThisAssistantSpeaking =
+          exchange.assistantMessage &&
+          isSpeaking &&
+          currentlySpeakingId === exchange.assistantMessage.id;
 
         return (
-          <div
-            key={msg.id}
-            className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
-          >
-            {/* Assistant label */}
-            {!isUser && (
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">
-                <Sparkles className="h-3 w-3" />
-                <span>Finance Assistant</span>
+          <div key={exchange.id} className="space-y-3">
+            {/* User Question */}
+            {exchange.userMessage && (
+              <div className="flex flex-col items-end">
+                <div className="relative max-w-2xl rounded-2xl bg-indigo-600 p-4 text-xs leading-relaxed text-white shadow-sm transition">
+                  <div className="whitespace-pre-wrap font-sans">
+                    {exchange.userMessage.content}
+                  </div>
+                </div>
+                <span className="mt-1 px-1 font-mono text-[10px] text-slate-400 dark:text-zinc-500">
+                  {exchange.userMessage.timestamp}
+                </span>
               </div>
             )}
 
-            {/* Bubble */}
-            <div
-              className={`relative max-w-2xl rounded-2xl p-4 text-xs leading-relaxed transition ${
-                isUser
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "theme-card text-slate-800 dark:text-zinc-200"
-              }`}
-            >
-              {/* Message Content */}
-              <div className="whitespace-pre-wrap font-sans">{msg.content}</div>
+            {/* Assistant Response or Loading Indicator for this exchange */}
+            {exchange.assistantMessage ? (
+              <div className="flex flex-col items-start">
+                <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">
+                  <Sparkles className="h-3 w-3" />
+                  <span>Finance Assistant</span>
+                </div>
 
-              {/* Message Footer: Audio Playback / Stop Button */}
-              {!isUser && onSpeakText && (
-                <div className="mt-2.5 flex items-center justify-end border-t border-slate-100 dark:border-white/[0.06] pt-2 text-[11px]">
-                  {isThisMessageSpeaking ? (
-                    <button
-                      onClick={() => onStopSpeech && onStopSpeech()}
-                      className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-rose-600 dark:text-rose-400 font-semibold transition hover:bg-rose-500/20 active:scale-98 animate-pulse shadow-sm"
-                      title="Stop reading response"
-                    >
-                      <Square className="h-3 w-3 fill-current" />
-                      <span className="text-[11px]">Stop Audio</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onSpeakText(msg.content, msg.id)}
-                      className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-slate-500 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-300 active:scale-98"
-                      title="Listen to response"
-                    >
-                      <Volume2 className="h-3.5 w-3.5" />
-                      <span className="text-[11px]">Play Audio</span>
-                    </button>
+                <div className="theme-card relative max-w-2xl rounded-2xl p-4 text-xs leading-relaxed text-slate-800 dark:text-zinc-200 transition">
+                  <div className="whitespace-pre-wrap font-sans">
+                    {exchange.assistantMessage.content}
+                  </div>
+
+                  {/* Message Footer: Audio Playback / Stop Button */}
+                  {onSpeakText && (
+                    <div className="mt-2.5 flex items-center justify-end border-t border-slate-100 dark:border-white/[0.06] pt-2 text-[11px]">
+                      {isThisAssistantSpeaking ? (
+                        <button
+                          onClick={() => onStopSpeech && onStopSpeech()}
+                          className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-rose-600 dark:text-rose-400 font-semibold transition hover:bg-rose-500/20 active:scale-98 animate-pulse shadow-sm"
+                          title="Stop reading response"
+                        >
+                          <Square className="h-3 w-3 fill-current" />
+                          <span className="text-[11px]">Stop Audio</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            onSpeakText(
+                              exchange.assistantMessage!.content,
+                              exchange.assistantMessage!.id
+                            )
+                          }
+                          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-slate-500 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-300 active:scale-98"
+                          title="Listen to response"
+                        >
+                          <Volume2 className="h-3.5 w-3.5" />
+                          <span className="text-[11px]">Play Audio</span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            <span className="mt-1 px-1 font-mono text-[10px] text-slate-400 dark:text-zinc-500">
-              {msg.timestamp}
-            </span>
+                <span className="mt-1 px-1 font-mono text-[10px] text-slate-400 dark:text-zinc-500">
+                  {exchange.assistantMessage.timestamp}
+                </span>
+              </div>
+            ) : isLatest && loading ? (
+              <div className="flex flex-col items-start">
+                <div className="mb-1 flex items-center gap-1.5 text-[11px] text-indigo-600 dark:text-indigo-300">
+                  <Sparkles className="h-3 w-3 animate-spin" />
+                  <span>Thinking...</span>
+                </div>
+                <div className="theme-card flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs text-slate-500 dark:text-zinc-400">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-400 delay-150" />
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-300 delay-300" />
+                  <span className="ml-1 text-slate-700 dark:text-zinc-300">
+                    Checking your finances...
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Divider between exchanges */}
+            {index < reversedExchanges.length - 1 && (
+              <div className="pt-3 border-b border-slate-100 dark:border-white/[0.04]" />
+            )}
           </div>
         );
       })}
-
-      {/* Loading Indicator */}
-      {loading && (
-        <div className="flex flex-col items-start">
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] text-indigo-600 dark:text-indigo-300">
-            <Sparkles className="h-3 w-3 animate-spin" />
-            <span>Thinking...</span>
-          </div>
-          <div className="theme-card flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs text-slate-500 dark:text-zinc-400">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
-            <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-400 delay-150" />
-            <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-300 delay-300" />
-            <span className="ml-1 text-slate-700 dark:text-zinc-300">Checking your finances...</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
