@@ -15,7 +15,6 @@ import {
   AlertCircle,
   X,
   Globe,
-  Square,
 } from "lucide-react";
 
 interface VoiceCommandBarProps {
@@ -403,20 +402,8 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             </div>
           </div>
 
-          {/* Controls: Language, Stop Audio (if active), Audio Output toggle */}
+          {/* Controls: Language & Audio Output toggle */}
           <div className="flex items-center gap-2">
-            {/* Quick Stop Audio button if speaking */}
-            {isSpeaking && onStopSpeech && (
-              <button
-                onClick={onStopSpeech}
-                title="Stop voice output"
-                className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 active:scale-98 transition animate-pulse shadow-sm"
-              >
-                <Square className="h-3 w-3 fill-current" />
-                <span>Stop Audio</span>
-              </button>
-            )}
-
             {/* Language Selector */}
             <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300">
               <Globe className="h-3.5 w-3.5 text-slate-400" />
