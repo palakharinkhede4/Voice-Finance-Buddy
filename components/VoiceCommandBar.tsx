@@ -118,12 +118,12 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     setIsRecording(false);
   }, []);
 
-  // MediaRecorder Microphone Stream Recording
+  // MediaRecorder Microphone Stream Recording (optimized for iOS Apple devices and standard browsers)
   const startMediaRecorder = useCallback(async () => {
-    // Crucial: Mute/cancel existing speech output before microphone begins capturing audio
+    // Only cancel speech synthesis if actively speaking to prevent iOS AVAudioSession hardware locks
     if (onStopSpeech) {
       onStopSpeech();
-    } else if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    } else if (typeof window !== "undefined" && "speechSynthesis" in window && window.speechSynthesis.speaking) {
       try {
         window.speechSynthesis.cancel();
       } catch {
@@ -132,16 +132,37 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported("audio/webm")
-          ? "audio/webm"
-          : MediaRecorder.isTypeSupported("audio/mp4")
-          ? "audio/mp4"
-          : undefined,
-      });
+      // Detect optimal MIME type supported by browser (iOS requires audio/mp4 or audio/aac)
+      let selectedMimeType = "";
+      let fileExt = "webm";
+
+      if (typeof MediaRecorder !== "undefined") {
+        if (MediaRecorder.isTypeSupported("audio/mp4")) {
+          selectedMimeType = "audio/mp4";
+          fileExt = "mp4";
+        } else if (MediaRecorder.isTypeSupported("audio/aac")) {
+          selectedMimeType = "audio/aac";
+          fileExt = "aac";
+        } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+          selectedMimeType = "audio/webm;codecs=opus";
+          fileExt = "webm";
+        } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+          selectedMimeType = "audio/webm";
+          fileExt = "webm";
+        }
+      }
+
+      const recorderOptions: MediaRecorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : {};
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -152,8 +173,9 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
       };
 
       mediaRecorder.onstop = async () => {
+        const finalMime = mediaRecorder.mimeType || selectedMimeType || "audio/mp4";
         const audioBlob = new Blob(audioChunksRef.current, {
-          type: mediaRecorder.mimeType || "audio/webm",
+          type: finalMime,
         });
 
         if (streamRef.current) {
@@ -161,8 +183,15 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
           streamRef.current = null;
         }
 
+        if (audioBlob.size === 0) {
+          setErrorMessage("No audio was captured. Please try speaking again.");
+          setIsRecording(false);
+          setInterimText("");
+          return;
+        }
+
         const formData = new FormData();
-        formData.append("file", audioBlob, "recording.webm");
+        formData.append("file", audioBlob, `recording.${fileExt}`);
 
         try {
           const res = await fetch("/api/transcribe", {
@@ -193,7 +222,8 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
         }
       };
 
-      mediaRecorder.start();
+      // Pass 250ms timeslice so iOS Safari continuously flushes audio chunks
+      mediaRecorder.start(250);
       setIsRecording(true);
       setErrorMessage(null);
     } catch (err) {
@@ -210,10 +240,10 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     setErrorMessage(null);
     setInterimText("");
 
-    // Crucial: Mute/cancel existing speech output before taking new voice input
+    // Only cancel speech synthesis if actively speaking
     if (onStopSpeech) {
       onStopSpeech();
-    } else if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    } else if (typeof window !== "undefined" && "speechSynthesis" in window && window.speechSynthesis.speaking) {
       try {
         window.speechSynthesis.cancel();
       } catch {
@@ -221,7 +251,14 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
       }
     }
 
-    if (forceMediaRecorder || !hasSpeechRecognition) {
+    // Detect Apple iOS / iPadOS / WebKit devices
+    const isAppleDevice =
+      typeof navigator !== "undefined" &&
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+    // Apple devices strictly use MediaRecorder + Server STT for rock-solid stability
+    if (isAppleDevice || forceMediaRecorder || !hasSpeechRecognition) {
       startMediaRecorder();
       return;
     }

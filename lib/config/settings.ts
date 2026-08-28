@@ -31,8 +31,8 @@ export function getSettings(): Settings {
     apiKey = geminiKey;
     baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai/";
     providerName = "Google Gemini (3.5 Flash Lite)";
-    chatModel = process.env.ARTHBOT_CHAT_MODEL || process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
-    transcribeModel = process.env.ARTHBOT_TRANSCRIBE_MODEL || "gemini-3.5-flash-lite";
+    chatModel = "gemini-3.5-flash-lite";
+    transcribeModel = "gemini-3.5-flash-lite";
   } else if (openaiKey) {
     apiKey = openaiKey;
     baseUrl = undefined;
