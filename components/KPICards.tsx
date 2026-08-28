@@ -22,7 +22,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ kpis }) => {
       <div className="theme-card theme-card-hover rounded-xl p-4">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold tracking-wide uppercase text-slate-500 dark:text-zinc-400">
-            Total Net Worth
+            Net Worth
           </span>
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-zinc-300">
             <Wallet className="h-3.5 w-3.5" />
@@ -39,11 +39,11 @@ export const KPICards: React.FC<KPICardsProps> = ({ kpis }) => {
         </div>
       </div>
 
-      {/* 30-Day Outflow */}
+      {/* Monthly Expenses */}
       <div className="theme-card theme-card-hover rounded-xl p-4">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold tracking-wide uppercase text-slate-500 dark:text-zinc-400">
-            30-Day Outflow
+            Monthly Expenses
           </span>
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 dark:bg-zinc-800 text-rose-600 dark:text-rose-400">
             <ArrowDownRight className="h-3.5 w-3.5" />
@@ -54,7 +54,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ kpis }) => {
             ₹{kpis.totalExpense30Days.toLocaleString("en-IN")}
           </div>
           <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-500 dark:text-zinc-400">
-            <span>Top:</span>
+            <span>Highest:</span>
             <span className="font-medium capitalize text-slate-700 dark:text-zinc-200">
               {kpis.topExpenseCategory.category} (₹{kpis.topExpenseCategory.amount.toLocaleString("en-IN")})
             </span>
@@ -88,11 +88,11 @@ export const KPICards: React.FC<KPICardsProps> = ({ kpis }) => {
         </div>
       </div>
 
-      {/* Budget Utilization */}
+      {/* Budget Used */}
       <div className="theme-card theme-card-hover rounded-xl p-4">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold tracking-wide uppercase text-slate-500 dark:text-zinc-400">
-            Budget Utilization
+            Budget Used
           </span>
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 dark:bg-zinc-800 text-amber-600 dark:text-amber-400">
             <Target className="h-3.5 w-3.5" />
@@ -111,7 +111,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ kpis }) => {
             >
               {kpis.budgetUtilizationPct}%
             </span>
-            <span className="text-[11px] text-slate-500 dark:text-zinc-400">consumed</span>
+            <span className="text-[11px] text-slate-500 dark:text-zinc-400">used this month</span>
           </div>
           <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
             <div

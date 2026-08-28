@@ -7,10 +7,7 @@ import {
   TrendingUp,
   Receipt,
   Sparkles,
-  ShieldCheck,
   Volume2,
-  Clock,
-  Wrench,
   ArrowRight,
 } from "lucide-react";
 import { OrchestrationResult } from "@/lib/agents/orchestrator";
@@ -31,33 +28,25 @@ interface ChatStreamProps {
   onSelectPrompt?: (text: string) => void;
 }
 
-const AGENT_ICONS: Record<string, React.ElementType> = {
-  "Expense Agent": Wallet,
-  "Budget Agent": Target,
-  "Investment Agent": TrendingUp,
-  "Tax Agent": Receipt,
-  "Planner Agent": Sparkles,
-  "Security Shield": ShieldCheck,
-};
-
 export const ChatStream: React.FC<ChatStreamProps> = ({
   messages,
   loading = false,
   onSpeakText,
-  onViewTelemetry,
   onSelectPrompt,
 }) => {
   // If no messages yet, show a clean, categorized prompt starter grid
   if (messages.length === 0) {
     return (
-      <div className="py-5 space-y-4">
+      <div className="py-6 space-y-4">
         <div className="text-center">
-          <div className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold mb-1.5">
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold mb-2">
             <Sparkles className="h-4 w-4" />
           </div>
-          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">AI Finance Assistant</h4>
+          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+            Personal Finance Assistant
+          </h4>
           <p className="text-xs text-slate-500 dark:text-zinc-400">
-            Select a financial query below or tap the microphone to speak
+            Ask any question about your spending, savings, taxes, or investments
           </p>
         </div>
 
@@ -67,25 +56,25 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
               title: "Account & Balance Check",
               desc: "What is my total account balance across savings & checking?",
               icon: Wallet,
-              tag: "Expense Agent",
+              tag: "Balances",
             },
             {
               title: "Tax Regime Optimization",
               desc: "Compare Old vs New Tax Regime for 12 LPA salary",
               icon: Receipt,
-              tag: "Tax Agent",
+              tag: "Taxes",
             },
             {
               title: "SIP Returns Projection",
               desc: "Calculate SIP returns for ₹10,000 per month at 12% for 10 years",
               icon: TrendingUp,
-              tag: "Investment Agent",
+              tag: "Investments",
             },
             {
-              title: "Budget & Overspending Alert",
+              title: "Monthly Budget Check",
               desc: "How much did I spend on food and dining this month?",
               icon: Target,
-              tag: "Budget Agent",
+              tag: "Budgets",
             },
           ].map((item) => {
             const Icon = item.icon;
@@ -93,7 +82,7 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
               <button
                 key={item.title}
                 onClick={() => onSelectPrompt && onSelectPrompt(item.desc)}
-                className="theme-card theme-card-hover flex flex-col justify-between text-left p-3.5 rounded-xl group"
+                className="theme-card theme-card-hover flex flex-col justify-between text-left p-3.5 rounded-xl group transition"
               >
                 <div>
                   <div className="flex items-center justify-between">
@@ -107,7 +96,7 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
                   </p>
                 </div>
                 <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400 dark:text-zinc-500">
-                  <span>{item.tag}</span>
+                  <span className="font-medium text-slate-500 dark:text-zinc-400">{item.tag}</span>
                   <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition text-indigo-500" />
                 </div>
               </button>
@@ -122,22 +111,17 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
     <div className="space-y-4">
       {messages.map((msg) => {
         const isUser = msg.role === "user";
-        const meta = msg.metadata;
-        const AgentIcon = meta ? AGENT_ICONS[meta.agentName] || Sparkles : Sparkles;
 
         return (
           <div
             key={msg.id}
             className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
           >
-            {/* Agent attribution */}
-            {!isUser && meta && (
-              <div className="mb-1 flex items-center gap-2">
-                <span className="flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">
-                  <AgentIcon className="h-3 w-3" />
-                  <span>{meta.agentName}</span>
-                </span>
-                <span className="text-[10px] text-slate-400 dark:text-zinc-500">{meta.agentLabel}</span>
+            {/* Assistant label */}
+            {!isUser && (
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">
+                <Sparkles className="h-3 w-3" />
+                <span>Finance Assistant</span>
               </div>
             )}
 
@@ -149,50 +133,20 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
                   : "theme-card text-slate-800 dark:text-zinc-200"
               }`}
             >
-              {/* Tool Execution summary badge if any */}
-              {!isUser && meta?.tools && meta.tools.length > 0 && (
-                <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
-                  {meta.tools.map((t, idx) => (
-                    <span
-                      key={idx}
-                      className="flex items-center gap-1 rounded-md border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-zinc-900 px-2 py-0.5 font-mono text-[10px] text-slate-700 dark:text-zinc-300"
-                    >
-                      <Wrench className="h-2.5 w-2.5 text-indigo-500" />
-                      <span>{t.name}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-
               {/* Message Content */}
               <div className="whitespace-pre-wrap font-sans">{msg.content}</div>
 
-              {/* Metadata Footer: Latency & Playback */}
-              {!isUser && (
-                <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 dark:border-white/[0.06] pt-2 text-[11px] text-slate-400 dark:text-zinc-400">
-                  <div className="flex items-center gap-2">
-                    {meta?.totalLatencyMs && (
-                      <button
-                        onClick={() => onViewTelemetry && onViewTelemetry(meta)}
-                        className="flex items-center gap-1 rounded px-1.5 py-0.5 font-mono transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-700 dark:hover:text-zinc-200"
-                        title="View latency breakdown"
-                      >
-                        <Clock className="h-3 w-3 text-slate-400" />
-                        <span>{meta.totalLatencyMs} ms</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {onSpeakText && (
-                    <button
-                      onClick={() => onSpeakText(msg.content)}
-                      className="flex items-center gap-1 rounded-md px-2 py-0.5 text-slate-500 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-300"
-                      title="Play speech response"
-                    >
-                      <Volume2 className="h-3.5 w-3.5" />
-                      <span className="text-[10px]">Play Audio</span>
-                    </button>
-                  )}
+              {/* Message Footer: Audio Playback */}
+              {!isUser && onSpeakText && (
+                <div className="mt-2.5 flex items-center justify-end border-t border-slate-100 dark:border-white/[0.06] pt-2 text-[11px] text-slate-400 dark:text-zinc-400">
+                  <button
+                    onClick={() => onSpeakText(msg.content)}
+                    className="flex items-center gap-1 rounded-md px-2 py-0.5 text-slate-500 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-300"
+                    title="Listen to response"
+                  >
+                    <Volume2 className="h-3.5 w-3.5" />
+                    <span className="text-[10px]">Play Audio</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -209,13 +163,13 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
         <div className="flex flex-col items-start">
           <div className="mb-1 flex items-center gap-1.5 text-[11px] text-indigo-600 dark:text-indigo-300">
             <Sparkles className="h-3 w-3 animate-spin" />
-            <span>Processing Query & Tools...</span>
+            <span>Thinking...</span>
           </div>
           <div className="theme-card flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs text-slate-500 dark:text-zinc-400">
             <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
             <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-400 delay-150" />
             <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-300 delay-300" />
-            <span className="ml-1 text-slate-700 dark:text-zinc-300">Executing financial tools & reasoning</span>
+            <span className="ml-1 text-slate-700 dark:text-zinc-300">Checking your finances...</span>
           </div>
         </div>
       )}

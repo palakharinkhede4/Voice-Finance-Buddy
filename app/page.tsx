@@ -8,7 +8,6 @@ import { BudgetTracker } from "@/components/BudgetTracker";
 import { TransactionsTable } from "@/components/TransactionsTable";
 import { CalculatorsView } from "@/components/CalculatorsView";
 import { AddTransactionModal } from "@/components/AddTransactionModal";
-import { PipelineTelemetryModal } from "@/components/PipelineTelemetryModal";
 import { ChatStream, ChatMessage } from "@/components/ChatStream";
 import { VoiceCommandBar } from "@/components/VoiceCommandBar";
 import {
@@ -20,15 +19,13 @@ import {
 } from "@/lib/db/finance-db";
 import { MarketIndex } from "@/lib/tools/market";
 import { OrchestrationResult } from "@/lib/agents/orchestrator";
-import { Target, Wallet, ShieldCheck } from "lucide-react";
+import { Target, Wallet } from "lucide-react";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("assistant");
   const [loading, setLoading] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isTelemetryModalOpen, setIsTelemetryModalOpen] = useState(false);
-  const [activeTelemetry, setActiveTelemetry] = useState<OrchestrationResult | undefined>(undefined);
 
   // Dark / Light Theme State
   const [isDark, setIsDark] = useState(true);
@@ -42,7 +39,6 @@ export default function Dashboard() {
   const [budgets, setBudgets] = useState<BudgetLimit[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [indices, setIndices] = useState<MarketIndex[]>([]);
-  const [providerName, setProviderName] = useState<string>("AI Active");
 
   // Chat Messages State (starts clean without noisy greeting)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -94,9 +90,6 @@ export default function Dashboard() {
         setBudgets(data.budgets || []);
         setGoals(data.goals || []);
         setIndices(data.market?.indices || []);
-        if (data.user?.provider) {
-          setProviderName(data.user.provider);
-        }
       }
     } catch (err) {
       console.warn("Failed to fetch dashboard data:", err);
@@ -194,7 +187,6 @@ export default function Dashboard() {
         };
 
         setMessages((prev) => [...prev, assistantMsg]);
-        setActiveTelemetry(result);
 
         if (autoSpeak && result.response) {
           speakText(result.response);
@@ -206,7 +198,7 @@ export default function Dashboard() {
         const fallbackMsg: ChatMessage = {
           id: `err-${Date.now()}`,
           role: "assistant",
-          content: errJson.error || "Unable to process query at this moment.",
+          content: errJson.error || "Unable to process your request at this moment.",
           timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
         };
         setMessages((prev) => [...prev, fallbackMsg]);
@@ -215,7 +207,7 @@ export default function Dashboard() {
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         role: "assistant",
-        content: "Network error. Please check your connection.",
+        content: "Network connection error. Please check your connection and try again.",
         timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -229,22 +221,19 @@ export default function Dashboard() {
       {/* Top Header */}
       <Header
         indices={indices}
-        providerName={providerName}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenTelemetry={() => setIsTelemetryModalOpen(true)}
         isDark={isDark}
         onToggleTheme={toggleTheme}
       />
 
       {/* Main Content */}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 sm:px-6">
-        {/* Tab 1: AI Voice Assistant Hub (Clean, focused, Hero Voice Console in front) */}
+        {/* Tab 1: AI Voice Assistant Hub */}
         {activeTab === "assistant" && (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
             {/* Main Assistant Column */}
             <div className="space-y-4 lg:col-span-8">
-              {/* HERO VOICE CONSOLE IN FRONT */}
               <VoiceCommandBar
                 onSendMessage={handleSendMessage}
                 loading={loading}
@@ -252,16 +241,12 @@ export default function Dashboard() {
                 setAutoSpeak={setAutoSpeak}
               />
 
-              {/* Chat Stream & Prompt Starter Directory */}
+              {/* Chat Stream */}
               <div className="theme-card rounded-2xl p-4 sm:p-5 min-h-[420px]">
                 <ChatStream
                   messages={messages}
                   loading={loading}
                   onSpeakText={speakText}
-                  onViewTelemetry={(meta) => {
-                    setActiveTelemetry(meta);
-                    setIsTelemetryModalOpen(true);
-                  }}
                   onSelectPrompt={handleSendMessage}
                 />
               </div>
@@ -273,13 +258,13 @@ export default function Dashboard() {
               {kpis && (
                 <div className="theme-card rounded-xl p-4">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                    Net Portfolio
+                    Net Worth
                   </span>
                   <div className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
                     ₹{kpis.netWorth.toLocaleString("en-IN")}
                   </div>
                   <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
-                    <span>30D Outflow: ₹{kpis.totalExpense30Days.toLocaleString("en-IN")}</span>
+                    <span>Spent This Month: ₹{kpis.totalExpense30Days.toLocaleString("en-IN")}</span>
                     <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                       {kpis.savingsRatePct}% Savings
                     </span>
@@ -319,7 +304,7 @@ export default function Dashboard() {
               <div className="theme-card rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                    Active Milestones
+                    Financial Goals
                   </span>
                   <Target className="h-3.5 w-3.5 text-emerald-500" />
                 </div>
@@ -348,22 +333,11 @@ export default function Dashboard() {
                   })}
                 </div>
               </div>
-
-              {/* Security Guard */}
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 text-xs">
-                <div className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>Prompt Injection Defense Active</span>
-                </div>
-                <p className="mt-1 text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
-                  Real-time pattern filters guard against unauthorized instruction overrides.
-                </p>
-              </div>
             </div>
           </div>
         )}
 
-        {/* Tab 2: Financial Overview & KPIs */}
+        {/* Tab 2: Financial Overview & Analytics */}
         {activeTab === "overview" && (
           <div className="space-y-5">
             <KPICards kpis={kpis} />
@@ -375,7 +349,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Tab 3: Transactions & Ledger */}
+        {/* Tab 3: Transactions */}
         {activeTab === "ledger" && (
           <div className="space-y-5">
             <TransactionsTable
@@ -396,8 +370,8 @@ export default function Dashboard() {
       {/* Footer */}
       <footer className="border-t border-slate-200/80 dark:border-white/[0.06] bg-white dark:bg-[#0A0C13] py-3.5 text-center text-xs text-slate-500 dark:text-zinc-500 transition-colors">
         <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Voice Finance Buddy • Vercel Serverless Architecture</span>
-          <span>Instant Edge Execution • 0 Cold Sleeps</span>
+          <span>Voice Finance Buddy • Private & Secure Personal Finance Assistant</span>
+          <span>Designed for effortless money management</span>
         </div>
       </footer>
 
@@ -406,13 +380,6 @@ export default function Dashboard() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={fetchDashboardData}
-      />
-
-      <PipelineTelemetryModal
-        isOpen={isTelemetryModalOpen}
-        onClose={() => setIsTelemetryModalOpen(false)}
-        stages={activeTelemetry?.stages}
-        totalLatencyMs={activeTelemetry?.totalLatencyMs}
       />
     </div>
   );

@@ -4,8 +4,6 @@ import React from "react";
 import {
   TrendingUp,
   TrendingDown,
-  ShieldCheck,
-  Cpu,
   Layers,
   Sparkles,
   Receipt,
@@ -27,10 +25,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   indices = [],
-  providerName = "AI Active",
   activeTab,
   setActiveTab,
-  onOpenTelemetry,
   isDark,
   onToggleTheme,
 }) => {
@@ -47,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
               Voice Finance Buddy
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Autonomous Wealth & Tax Intelligence
+              Your Personal Financial Assistant
             </p>
           </div>
         </div>
@@ -83,12 +79,12 @@ export const Header: React.FC<HeaderProps> = ({
           })}
         </div>
 
-        {/* Controls: Theme Toggle, Telemetry, Model */}
+        {/* Controls: Theme Toggle */}
         <div className="flex items-center gap-2">
-          {/* Light / Dark Mode Toggle */}
           <button
             onClick={onToggleTheme}
             title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle theme"
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-zinc-800"
           >
             {isDark ? (
@@ -97,22 +93,6 @@ export const Header: React.FC<HeaderProps> = ({
               <Moon className="h-4 w-4 text-slate-600" />
             )}
           </button>
-
-          {/* Telemetry Button */}
-          <button
-            onClick={onOpenTelemetry}
-            title="Inspect 4-stage pipeline latency & safety"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-zinc-800"
-          >
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="hidden sm:inline">Telemetry</span>
-          </button>
-
-          {/* Model Status */}
-          <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-2.5 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-300">
-            <Cpu className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
-            <span>{providerName}</span>
-          </div>
         </div>
       </div>
 
@@ -120,8 +100,8 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 pb-2 pt-0.5 sm:px-6">
         {[
           { id: "assistant", label: "Voice Assistant", icon: Sparkles },
-          { id: "overview", label: "Overview & Charts", icon: Layers },
-          { id: "ledger", label: "Transactions & Ledger", icon: Wallet },
+          { id: "overview", label: "Overview & Analytics", icon: Layers },
+          { id: "ledger", label: "Transactions", icon: Wallet },
           { id: "calculators", label: "Calculators & Tax", icon: Receipt },
         ].map((tab) => {
           const Icon = tab.icon;

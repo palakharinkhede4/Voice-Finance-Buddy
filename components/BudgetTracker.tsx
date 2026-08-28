@@ -16,10 +16,10 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ budgets = [] }) =>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-            Category Budget Limits
+            Monthly Category Budgets
           </h3>
           <p className="text-xs text-slate-500 dark:text-zinc-400">
-            Monthly threshold guardrails
+            Track spending limits against your monthly targets
           </p>
         </div>
         <div>

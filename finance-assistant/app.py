@@ -147,64 +147,6 @@ def _play_tts(result: PipelineResult) -> None:
         st.session_state.last_audio_bytes = result.audio_bytes
         st.session_state.audio_key_counter += 1
 
-def render_pipeline(result: PipelineResult) -> None:
-    with st.expander("⚡ Pipeline Execution Trace", expanded=False):
-        for s in result.stages:
-            cls  = "stage-skip" if s.skipped else "stage-ok"
-            icon = "⏭️" if s.skipped else "✅"
-            note = f" · <i>{s.note}</i>" if s.note else ""
-            st.markdown(
-                f'<div class="pipeline-stage {cls}">'
-                f'{icon} <b>{s.name}</b> ({s.backend}){note}'
-                f'<span class="stage-ms">{s.latency_ms:.0f} ms</span>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        st.caption(f"Total: **{result.total_ms:.0f} ms** | Agent: **{result.agent_name}**")
-
-# ── Architecture Dialog ───────────────────────────────────────────────────────
-
-@st.dialog("🏗️ Technical Architecture & Pipeline", width="large")
-def show_architecture_dialog():
-    st.markdown("### 🔄 7-Stage Voice-AI Pipeline Flow")
-    st.markdown("""
-```mermaid
-graph TD
-    A[🎤 Audio / Text Input] --> B[1. VAD: Silero ONNX]
-    B --> C[2. STT: Whisper Speech-to-Text]
-    C --> D[3. Security: PromptGuard & Sanitizer]
-    D --> E[4. Router: Agent Classifier]
-    E --> F[5. RAG: FAISS + Sentence-Transformers]
-    F --> G[6. Specialist Agents & LLM: Groq / Gemini]
-    G --> H[7. TTS: gTTS Audio Synthesizer]
-    H --> I[🔊 Audio Response]
-```
-""")
-    st.divider()
-    
-    st.markdown("### ⚡ Active Runtime Backends")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"📡 **VAD:** `{pipeline.vad_backend}`")
-        st.markdown(f"🎤 **STT:** `{pipeline.stt.backend.value}`")
-        st.markdown(f"🧭 **Router:** `LLM Intent Classifier`")
-    with col2:
-        st.markdown(f"📚 **RAG:** `{RAG_BACKEND}`")
-        st.markdown(f"🤖 **LLM:** `{pipeline.llm.backend.value}`")
-        st.markdown(f"🔊 **TTS:** `gTTS · {pipeline.tts.voice}`")
-
-    st.divider()
-    st.markdown("### 🤖 Autonomous Specialist Agents")
-    st.markdown("""
-| Agent | Domain & Focus | Capabilities |
-| :--- | :--- | :--- |
-| 💳 **Expense** | Account & Transactions | Balance lookup, Category analytics, Recent transactions |
-| 📊 **Budget** | Budgeting & Limits | Overspend detection, Savings rate coaching |
-| 📈 **Investment** | Wealth & Market Data | SIP, EMI, FD calculators, Live NSE/BSE & MF APIs |
-| 🧾 **Tax** | Income Tax & Exemptions | FY24-25 Old vs New Regime, 80C/80D/24(b) calculations |
-| 🗺️ **Planner** | Multi-Domain Advice | Synthesizes comprehensive advice across all agents |
-""")
-
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
@@ -217,18 +159,13 @@ with st.sidebar:
     st.caption(f"Account · {db.user.account_number}")
     st.divider()
 
-    if st.button("🏗️ Technical Architecture", **_cw()):
-        show_architecture_dialog()
-
-    st.divider()
-
     with st.expander("⚙️ Settings", expanded=False):
         st.session_state.streaming_enabled = st.toggle(
-            "Stream LLM responses", value=st.session_state.streaming_enabled,
-            help="Show response token-by-token as it's generated"
+            "Stream responses", value=st.session_state.streaming_enabled,
+            help="Show response text as it is generated"
         )
         st.session_state.tts_enabled = st.toggle(
-            "Voice responses (TTS)", value=st.session_state.tts_enabled,
+            "Voice responses", value=st.session_state.tts_enabled,
         )
 
     with st.expander("💡 Sample Prompts", expanded=False):
@@ -411,11 +348,6 @@ with left_col:
                 st.session_state.last_audio_bytes = None
                 st.rerun()
 
-    # ── Pipeline trace ────────────────────────────────────────────────────────
-    if st.session_state.last_pipeline_result:
-        st.divider()
-        render_pipeline(st.session_state.last_pipeline_result)
-
 # ── Right Column: Conversation Feed (Newest Queries at Top) ───────────────────
 with right_col:
     st.markdown("### 💬 Conversation")
@@ -447,13 +379,7 @@ with right_col:
                 st.markdown(user_item[1])
 
             if assistant_item:
-                with st.chat_message("assistant", avatar="🤖"):
-                    agent_tag = assistant_item[2] if len(assistant_item) > 2 else None
-                    if agent_tag:
-                        st.markdown(
-                            f'<span class="agent-badge">🤖 {agent_tag} Agent</span>',
-                            unsafe_allow_html=True,
-                        )
+                with st.chat_message("assistant"):
                     st.markdown(assistant_item[1])
 
         if st.button("🗑️ Clear Chat", **_cw()):

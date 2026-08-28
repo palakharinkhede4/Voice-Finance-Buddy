@@ -14,10 +14,7 @@ import {
   Target,
   AlertCircle,
   X,
-  Radio,
   Globe,
-  SlidersHorizontal,
-  Info,
 } from "lucide-react";
 
 interface VoiceCommandBarProps {
@@ -37,7 +34,6 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [selectedLang, setSelectedLang] = useState<string>("en-IN");
   const [hasSpeechRecognition, setHasSpeechRecognition] = useState(false);
   const [forceMediaRecorder, setForceMediaRecorder] = useState(false);
@@ -69,7 +65,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     },
     {
       category: "Expenses",
-      label: "Food Expenses",
+      label: "Food & Dining",
       query: "How much did I spend on food and dining this month?",
       icon: Target,
     },
@@ -118,8 +114,8 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     setIsRecording(false);
   }, []);
 
-  // Option B: MediaRecorder Microphone Stream Recording
-  const startMediaRecorder = useCallback(async (customInfo?: string) => {
+  // MediaRecorder Microphone Stream Recording
+  const startMediaRecorder = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -166,17 +162,16 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             setInputText(text);
             setInterimText("");
             setErrorMessage(null);
-            setInfoMessage(null);
             onSendMessage(text);
           } else {
             setErrorMessage(
               data.error ||
-                "Could not transcribe audio. Please type your query in the input field or check API key."
+                "Could not transcribe audio. Please try speaking again or type your question."
             );
           }
         } catch (err) {
           console.warn("Transcription API error:", err);
-          setErrorMessage("Failed to send audio for transcription. Please check your connection.");
+          setErrorMessage("Failed to process audio. Please check your connection or type below.");
         } finally {
           setIsRecording(false);
           setInterimText("");
@@ -186,14 +181,11 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
       mediaRecorder.start();
       setIsRecording(true);
       setErrorMessage(null);
-      if (customInfo) {
-        setInfoMessage(customInfo);
-      }
     } catch (err) {
       console.warn("Microphone access failed:", err);
       setIsRecording(false);
       setErrorMessage(
-        "Microphone access blocked or unavailable. Please enable microphone permissions in your browser address bar."
+        "Microphone access was blocked. Please allow microphone permissions in your browser or type your question."
       );
     }
   }, [onSendMessage]);
@@ -201,10 +193,8 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
   // Main Record Action
   const startRecording = async () => {
     setErrorMessage(null);
-    setInfoMessage(null);
     setInterimText("");
 
-    // If forced to MediaRecorder or Web Speech not available, use MediaRecorder
     if (forceMediaRecorder || !hasSpeechRecognition) {
       startMediaRecorder();
       return;
@@ -262,13 +252,9 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
           console.warn("Speech recognition error:", errType);
 
           if (errType === "network") {
-            // Google Speech Service blocked (e.g. Brave browser or adblock/firewall)
-            // Seamlessly fall back to MediaRecorder audio capture immediately!
             setForceMediaRecorder(true);
             stopRecording();
-            startMediaRecorder(
-              "Google speech service blocked in browser. Automatically switched to Microphone Audio mode."
-            );
+            startMediaRecorder();
             return;
           }
 
@@ -277,11 +263,11 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
           if (errType === "no-speech") {
             setErrorMessage("No speech was detected. Please try speaking again.");
           } else if (errType === "not-allowed" || errType === "permission-denied") {
-            setErrorMessage("Microphone access was denied. Please allow microphone permissions in your browser address bar.");
+            setErrorMessage("Microphone access was denied. Please allow microphone access in your browser settings.");
           } else if (errType === "audio-capture") {
             setErrorMessage("No microphone found. Please check your audio input device.");
           } else {
-            setErrorMessage(`Speech recognition notice: ${errType || "Unable to capture audio"}. Try typing your query.`);
+            setErrorMessage("Unable to capture audio. Please try speaking again or type your question.");
           }
         };
 
@@ -305,7 +291,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
 
         return;
       } catch (err) {
-        console.warn("Web Speech API init failed, switching to MediaRecorder:", err);
+        console.warn("Web Speech init failed, switching to audio recorder:", err);
         setForceMediaRecorder(true);
         startMediaRecorder();
       }
@@ -330,25 +316,8 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Hero Voice Console Card */}
+      {/* Clean Voice Card */}
       <div className="theme-card rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-white/[0.08] shadow-sm">
-        {/* Info Banner */}
-        {infoMessage && (
-          <div className="mb-3.5 flex items-center justify-between gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3.5 py-2.5 text-xs text-indigo-600 dark:text-indigo-300">
-            <div className="flex items-center gap-2">
-              <Info className="h-4 w-4 flex-shrink-0" />
-              <span>{infoMessage}</span>
-            </div>
-            <button
-              onClick={() => setInfoMessage(null)}
-              className="rounded p-1 hover:bg-indigo-500/20 text-indigo-500 transition"
-              title="Dismiss note"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-
         {/* Error Notification Banner */}
         {errorMessage && (
           <div className="mb-3.5 flex items-center justify-between gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-600 dark:text-rose-400">
@@ -367,7 +336,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
         )}
 
         <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
-          {/* Voice Mic Hero Action */}
+          {/* Voice Mic Action */}
           <div className="flex items-center gap-3.5">
             {isRecording ? (
               <button
@@ -395,30 +364,13 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             )}
 
             <div className="text-xs">
-              <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-white">
-                <span>Voice Command Console</span>
-                <button
-                  onClick={() => setForceMediaRecorder(!forceMediaRecorder)}
-                  title="Click to toggle between Browser Web Speech and Microphone Audio capture modes"
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition cursor-pointer ${
-                    !forceMediaRecorder && hasSpeechRecognition
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
-                      : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20"
-                  }`}
-                >
-                  <Radio className="h-2.5 w-2.5 animate-pulse" />
-                  <span>
-                    {!forceMediaRecorder && hasSpeechRecognition
-                      ? "Web Speech (Live)"
-                      : "Mic Audio Mode"}
-                  </span>
-                  <SlidersHorizontal className="h-2.5 w-2.5 ml-0.5 opacity-60" />
-                </button>
+              <div className="font-semibold text-slate-800 dark:text-white">
+                Ask by Voice or Text
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400">
                 {isRecording
-                  ? "Speak your query naturally (e.g. what is my balance, compare tax)..."
-                  : "Instant voice recognition in English or Hindi"}
+                  ? "Speaking now... Tap finish when done"
+                  : "Instant voice answers in English or Hindi"}
               </div>
             </div>
           </div>
@@ -426,13 +378,13 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
           {/* Controls: Language & Audio toggle */}
           <div className="flex items-center gap-2">
             {/* Language Selector */}
-            <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 px-2 py-1.5 text-xs text-slate-600 dark:text-slate-300">
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900 px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300">
               <Globe className="h-3.5 w-3.5 text-slate-400" />
               <select
                 value={selectedLang}
                 onChange={(e) => setSelectedLang(e.target.value)}
                 className="bg-transparent text-[11px] font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-                title="Select recognition language"
+                title="Select language"
               >
                 <option value="en-IN" className="dark:bg-zinc-900">EN (India)</option>
                 <option value="hi-IN" className="dark:bg-zinc-900">HI (Hindi)</option>
@@ -443,7 +395,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             {/* Auto-speech audio toggle */}
             <button
               onClick={() => setAutoSpeak(!autoSpeak)}
-              title={autoSpeak ? "Spoken audio playback is ON" : "Spoken audio playback is MUTED"}
+              title={autoSpeak ? "Spoken responses are enabled" : "Spoken responses are muted"}
               className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                 autoSpeak
                   ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
@@ -455,7 +407,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
               ) : (
                 <VolumeX className="h-3.5 w-3.5" />
               )}
-              <span>{autoSpeak ? "Voice Audio On" : "Muted"}</span>
+              <span>{autoSpeak ? "Voice Output" : "Muted"}</span>
             </button>
           </div>
         </div>
@@ -463,10 +415,9 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
         {/* Live Audio Transcript Preview during speech */}
         {isRecording && (
           <div className="mt-3 flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/5 px-3 py-2 text-xs text-indigo-900 dark:text-indigo-200 animate-fadeIn">
-            <Radio className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse flex-shrink-0" />
             <span className="font-semibold text-indigo-600 dark:text-indigo-400">Hearing:</span>
             <span className="italic font-medium text-slate-700 dark:text-slate-200 truncate">
-              {interimText || "Listening for your voice... Tap finish when done"}
+              {interimText || "Listening for your voice..."}
             </span>
           </div>
         )}
@@ -475,7 +426,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
         <div className="mt-3.5 flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900/80 px-3 py-1.5 focus-within:border-indigo-500/50 transition">
           <input
             type="text"
-            placeholder="Type your question (e.g. what is my balance, compare tax, calculate SIP)..."
+            placeholder="Type your question (e.g. check balance, compare tax for 12 LPA, calculate SIP)..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -487,17 +438,17 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             onClick={handleSend}
             disabled={!inputText.trim() || loading}
             className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white transition hover:bg-indigo-500 disabled:opacity-30"
-            title="Send query"
+            title="Send question"
           >
             <Send className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        {/* Quick Action Chips */}
+        {/* Quick Suggestions */}
         <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mr-1 flex-shrink-0">
             <Sparkles className="h-3 w-3 text-indigo-500" />
-            <span>Shortcuts:</span>
+            <span>Suggestions:</span>
           </div>
 
           {PROMPTS.map((p) => {

@@ -69,8 +69,8 @@ export const CalculatorsView: React.FC = () => {
       {activeCalc === "sip" && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
           <div className="theme-card rounded-2xl p-5 lg:col-span-6">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">SIP Investment Parameters</h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">Systematic Wealth Accumulation</p>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Investment Details</h3>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Plan your monthly investment growth</p>
 
             <div className="mt-5 space-y-4">
               <div>
@@ -153,7 +153,7 @@ export const CalculatorsView: React.FC = () => {
             </div>
 
             <div className="mt-5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-xs text-indigo-700 dark:text-indigo-300">
-              Wealth Gain Ratio: <strong>{sipResult.returnsPct}%</strong> on principal across {sipYears} years.
+              Estimated Return: <strong>{sipResult.returnsPct}%</strong> total gain on your investment over {sipYears} years.
             </div>
           </div>
         </div>
@@ -163,8 +163,8 @@ export const CalculatorsView: React.FC = () => {
       {activeCalc === "emi" && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
           <div className="theme-card rounded-2xl p-5 lg:col-span-6">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Loan Parameters</h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">Home, Auto, or Personal Loan EMI</p>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Loan Details</h3>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Home, car, or personal loan calculation</p>
 
             <div className="mt-5 space-y-4">
               <div>
@@ -201,8 +201,8 @@ export const CalculatorsView: React.FC = () => {
 
               <div>
                 <div className="flex justify-between text-xs font-medium">
-                  <span className="text-slate-700 dark:text-zinc-300">Tenure (Years)</span>
-                  <span className="font-mono text-indigo-600 dark:text-indigo-400">{emiYears} Years ({emiYears * 12} mos)</span>
+                  <span className="text-slate-700 dark:text-zinc-300">Loan Tenure</span>
+                  <span className="font-mono text-indigo-600 dark:text-indigo-400">{emiYears} Years ({emiYears * 12} months)</span>
                 </div>
                 <input
                   type="range"
@@ -220,7 +220,7 @@ export const CalculatorsView: React.FC = () => {
           <div className="theme-card flex flex-col justify-between rounded-2xl p-5 lg:col-span-6">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Monthly Repayment</h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">Instalment and interest breakdown</p>
+              <p className="text-xs text-slate-500 dark:text-zinc-400">Monthly instalment and total interest</p>
 
               <div className="mt-5 space-y-3.5">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-2.5 text-xs">
@@ -238,14 +238,14 @@ export const CalculatorsView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-2.5 text-xs">
-                  <span className="text-slate-500 dark:text-zinc-400">Total Interest Payable</span>
+                  <span className="text-slate-500 dark:text-zinc-400">Total Interest</span>
                   <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">
                     ₹{emiResult.totalInterest.toLocaleString("en-IN")}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="font-semibold text-slate-700 dark:text-zinc-300">Total Payment</span>
+                  <span className="font-semibold text-slate-700 dark:text-zinc-300">Total Amount Payable</span>
                   <span className="font-mono font-semibold text-slate-900 dark:text-white">
                     ₹{emiResult.totalPayment.toLocaleString("en-IN")}
                   </span>
@@ -254,7 +254,7 @@ export const CalculatorsView: React.FC = () => {
             </div>
 
             <div className="mt-5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-zinc-900/60 p-3 text-xs text-slate-600 dark:text-zinc-300">
-              Interest constitutes <strong>{Math.round((emiResult.totalInterest / emiResult.totalPayment) * 100)}%</strong> of total loan repayment.
+              Interest represents <strong>{Math.round((emiResult.totalInterest / emiResult.totalPayment) * 100)}%</strong> of your total loan repayment.
             </div>
           </div>
         </div>
@@ -265,7 +265,7 @@ export const CalculatorsView: React.FC = () => {
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
           <div className="theme-card rounded-2xl p-5 lg:col-span-6">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Fixed Deposit Setup</h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">Guaranteed Return with Quarterly Compounding</p>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Guaranteed returns with quarterly compounding</p>
 
             <div className="mt-5 space-y-4">
               <div>
@@ -302,7 +302,7 @@ export const CalculatorsView: React.FC = () => {
 
               <div>
                 <div className="flex justify-between text-xs font-medium">
-                  <span className="text-slate-700 dark:text-zinc-300">Tenure (Years)</span>
+                  <span className="text-slate-700 dark:text-zinc-300">Tenure</span>
                   <span className="font-mono text-indigo-600 dark:text-indigo-400">{fdYears} Years</span>
                 </div>
                 <input
@@ -320,12 +320,12 @@ export const CalculatorsView: React.FC = () => {
 
           <div className="theme-card flex flex-col justify-between rounded-2xl p-5 lg:col-span-6">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Maturity Breakdown</h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">Gross interest & net post-TDS amount</p>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Maturity Summary</h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400">Total interest and net payout</p>
 
               <div className="mt-5 space-y-3.5">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-2.5 text-xs">
-                  <span className="text-slate-500 dark:text-zinc-400">Principal</span>
+                  <span className="text-slate-500 dark:text-zinc-400">Deposit Amount</span>
                   <span className="font-mono font-semibold text-slate-900 dark:text-white">
                     ₹{fdResult.principal.toLocaleString("en-IN")}
                   </span>
@@ -340,7 +340,7 @@ export const CalculatorsView: React.FC = () => {
 
                 {fdResult.tdsDeducted > 0 && (
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-2.5 text-xs">
-                    <span className="text-slate-500 dark:text-zinc-400">TDS Deducted (10%)</span>
+                    <span className="text-slate-500 dark:text-zinc-400">TDS (10%)</span>
                     <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">
                       -₹{fdResult.tdsDeducted.toLocaleString("en-IN")}
                     </span>
@@ -348,7 +348,7 @@ export const CalculatorsView: React.FC = () => {
                 )}
 
                 <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="font-semibold text-slate-700 dark:text-zinc-300">Net Maturity Value</span>
+                  <span className="font-semibold text-slate-700 dark:text-zinc-300">Maturity Value</span>
                   <span className="font-mono text-xl font-bold text-indigo-600 dark:text-indigo-400">
                     ₹{fdResult.netMaturity.toLocaleString("en-IN")}
                   </span>
@@ -369,8 +369,8 @@ export const CalculatorsView: React.FC = () => {
           <div className="theme-card rounded-2xl p-5 lg:col-span-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Gross Annual Salary</h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400">Indian Income Tax FY 2024-25</p>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Annual Income</h3>
+                <p className="text-xs text-slate-500 dark:text-zinc-400">Indian Income Tax (FY 2024-25)</p>
               </div>
               <div className="flex items-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-zinc-900 p-1 text-xs">
                 <button
@@ -411,7 +411,7 @@ export const CalculatorsView: React.FC = () => {
 
               <div className="mt-3.5 rounded-xl border border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-zinc-900/60 p-3.5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                  Tax Slab Computation
+                  Tax Slab Breakdown
                 </span>
                 <div className="mt-2 space-y-1 text-xs">
                   {taxResult.slabBreakdown.map((s, idx) => (
@@ -432,7 +432,7 @@ export const CalculatorsView: React.FC = () => {
 
           <div className="theme-card flex flex-col justify-between rounded-2xl p-5 lg:col-span-6">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Tax Liability Summary</h3>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Tax Summary</h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400">{taxResult.note}</p>
 
               <div className="mt-5 space-y-3.5">
@@ -481,7 +481,7 @@ export const CalculatorsView: React.FC = () => {
             </div>
 
             <div className="mt-5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-xs text-indigo-700 dark:text-indigo-300">
-              Effective Tax Rate: <strong>{taxResult.effectiveRatePct}%</strong> of gross salary.
+              Effective Tax Rate: <strong>{taxResult.effectiveRatePct}%</strong> of your annual income.
             </div>
           </div>
         </div>

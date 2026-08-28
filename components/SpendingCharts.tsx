@@ -136,16 +136,15 @@ export const SpendingCharts: React.FC<SpendingChartsProps> = ({
         </div>
       </div>
 
-      {/* 14-Day Trajectory Area Chart */}
+      {/* Daily Spending Trend Area Chart */}
       <div className="theme-card rounded-2xl p-5 lg:col-span-7">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              14-Day Expense Trajectory
+              Daily Spending Trend
             </h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">Daily debit trend in INR</p>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Day-by-day expense breakdown</p>
           </div>
-          <span className="text-xs text-slate-400">Telemetry</span>
         </div>
 
         <div className="mt-4 h-60 w-full">

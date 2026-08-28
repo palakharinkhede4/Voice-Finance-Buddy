@@ -43,10 +43,10 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-            Transaction Ledger
+            Transactions
           </h3>
           <p className="text-xs text-slate-500 dark:text-zinc-400">
-            Categorized financial ledger and history
+            View and search your income and expenses
           </p>
         </div>
 
@@ -55,7 +55,7 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
           className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500"
         >
           <Plus className="h-4 w-4" />
-          <span>Record Expense</span>
+          <span>Add Transaction</span>
         </button>
       </div>
 
