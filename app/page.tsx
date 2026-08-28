@@ -43,6 +43,10 @@ export default function Dashboard() {
   // Chat Messages State (starts clean without noisy greeting)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
+  // Speech Output State
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null);
+
   // Initialize theme based on system settings or localStorage
   useEffect(() => {
     try {
@@ -100,8 +104,21 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
+  // Stop text-to-speech output immediately
+  const stopSpeech = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (err) {
+        console.warn("Error cancelling speech:", err);
+      }
+    }
+    setIsSpeaking(false);
+    setCurrentlySpeakingId(null);
+  };
+
   // Speech synthesis helper
-  const speakText = (text: string) => {
+  const speakText = (text: string, messageId?: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     try {
       window.speechSynthesis.cancel();
@@ -112,10 +129,27 @@ export default function Dashboard() {
         .replace(/\s+/g, " ")
         .trim();
 
+      if (!cleanText) return;
+
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
       utterance.lang = "en-IN";
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        if (messageId) setCurrentlySpeakingId(messageId);
+      };
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        setCurrentlySpeakingId(null);
+      };
+
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        setCurrentlySpeakingId(null);
+      };
 
       const loadAndSpeak = () => {
         const voices = window.speechSynthesis.getVoices();
@@ -130,6 +164,8 @@ export default function Dashboard() {
             utterance.voice = preferredVoice;
           }
         }
+        setIsSpeaking(true);
+        if (messageId) setCurrentlySpeakingId(messageId);
         window.speechSynthesis.speak(utterance);
       };
 
@@ -143,12 +179,17 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.warn("Speech synthesis error:", err);
+      setIsSpeaking(false);
+      setCurrentlySpeakingId(null);
     }
   };
 
   // Handle incoming user query
   const handleSendMessage = async (queryText: string) => {
     if (!queryText.trim() || loading) return;
+
+    // Immediately cancel any playing speech so microphone/audio does not overlap
+    stopSpeech();
 
     const userMsg: ChatMessage = {
       id: `usr-${Date.now()}`,
@@ -177,9 +218,10 @@ export default function Dashboard() {
 
       if (res.ok) {
         const result: OrchestrationResult = await res.json();
+        const assistantMsgId = `ast-${Date.now()}`;
 
         const assistantMsg: ChatMessage = {
-          id: `ast-${Date.now()}`,
+          id: assistantMsgId,
           role: "assistant",
           content: result.response,
           timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
@@ -189,7 +231,7 @@ export default function Dashboard() {
         setMessages((prev) => [...prev, assistantMsg]);
 
         if (autoSpeak && result.response) {
-          speakText(result.response);
+          speakText(result.response, assistantMsgId);
         }
 
         fetchDashboardData();
@@ -238,7 +280,12 @@ export default function Dashboard() {
                 onSendMessage={handleSendMessage}
                 loading={loading}
                 autoSpeak={autoSpeak}
-                setAutoSpeak={setAutoSpeak}
+                setAutoSpeak={(val) => {
+                  setAutoSpeak(val);
+                  if (!val) stopSpeech();
+                }}
+                isSpeaking={isSpeaking}
+                onStopSpeech={stopSpeech}
               />
 
               {/* Chat Stream */}
@@ -247,6 +294,9 @@ export default function Dashboard() {
                   messages={messages}
                   loading={loading}
                   onSpeakText={speakText}
+                  onStopSpeech={stopSpeech}
+                  isSpeaking={isSpeaking}
+                  currentlySpeakingId={currentlySpeakingId}
                   onSelectPrompt={handleSendMessage}
                 />
               </div>

@@ -8,6 +8,7 @@ import {
   Receipt,
   Sparkles,
   Volume2,
+  Square,
   ArrowRight,
 } from "lucide-react";
 import { OrchestrationResult } from "@/lib/agents/orchestrator";
@@ -23,7 +24,10 @@ export interface ChatMessage {
 interface ChatStreamProps {
   messages: ChatMessage[];
   loading?: boolean;
-  onSpeakText?: (text: string) => void;
+  onSpeakText?: (text: string, messageId: string) => void;
+  onStopSpeech?: () => void;
+  isSpeaking?: boolean;
+  currentlySpeakingId?: string | null;
   onViewTelemetry?: (meta?: OrchestrationResult) => void;
   onSelectPrompt?: (text: string) => void;
 }
@@ -32,6 +36,9 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
   messages,
   loading = false,
   onSpeakText,
+  onStopSpeech,
+  isSpeaking = false,
+  currentlySpeakingId = null,
   onSelectPrompt,
 }) => {
   // If no messages yet, show a clean, categorized prompt starter grid
@@ -111,6 +118,7 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
     <div className="space-y-4">
       {messages.map((msg) => {
         const isUser = msg.role === "user";
+        const isThisMessageSpeaking = isSpeaking && currentlySpeakingId === msg.id;
 
         return (
           <div
@@ -136,17 +144,28 @@ export const ChatStream: React.FC<ChatStreamProps> = ({
               {/* Message Content */}
               <div className="whitespace-pre-wrap font-sans">{msg.content}</div>
 
-              {/* Message Footer: Audio Playback */}
+              {/* Message Footer: Audio Playback / Stop Button */}
               {!isUser && onSpeakText && (
-                <div className="mt-2.5 flex items-center justify-end border-t border-slate-100 dark:border-white/[0.06] pt-2 text-[11px] text-slate-400 dark:text-zinc-400">
-                  <button
-                    onClick={() => onSpeakText(msg.content)}
-                    className="flex items-center gap-1 rounded-md px-2 py-0.5 text-slate-500 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-300"
-                    title="Listen to response"
-                  >
-                    <Volume2 className="h-3.5 w-3.5" />
-                    <span className="text-[10px]">Play Audio</span>
-                  </button>
+                <div className="mt-2.5 flex items-center justify-end border-t border-slate-100 dark:border-white/[0.06] pt-2 text-[11px]">
+                  {isThisMessageSpeaking ? (
+                    <button
+                      onClick={() => onStopSpeech && onStopSpeech()}
+                      className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-rose-600 dark:text-rose-400 font-semibold transition hover:bg-rose-500/20 active:scale-98 animate-pulse shadow-sm"
+                      title="Stop reading response"
+                    >
+                      <Square className="h-3 w-3 fill-current" />
+                      <span className="text-[11px]">Stop Audio</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onSpeakText(msg.content, msg.id)}
+                      className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-slate-500 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-300 active:scale-98"
+                      title="Listen to response"
+                    >
+                      <Volume2 className="h-3.5 w-3.5" />
+                      <span className="text-[11px]">Play Audio</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
