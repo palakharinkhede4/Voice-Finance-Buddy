@@ -428,12 +428,21 @@ export default function Dashboard() {
             </Link>
             <span>•</span>
             <a
+              href="https://palakharinkhede4.github.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
+            >
+              Portfolio
+            </a>
+            <span>•</span>
+            <a
               href="https://www.linkedin.com/in/palakharinkhede/"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-slate-800 dark:hover:text-zinc-300 transition"
             >
-              Created by Palak Harinkhede
+              Palak Harinkhede
             </a>
           </div>
         </div>

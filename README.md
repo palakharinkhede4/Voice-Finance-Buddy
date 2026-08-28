@@ -112,7 +112,9 @@ Built with Next.js 15, TypeScript, Tailwind CSS, and Recharts. Deployable with 1
 ## Creator & Architect
 
 - **Author**: **Palak Harinkhede**
+- **Portfolio**: [palakharinkhede4.github.io](https://palakharinkhede4.github.io/)
 - **LinkedIn**: [linkedin.com/in/palakharinkhede](https://www.linkedin.com/in/palakharinkhede/)
 - **GitHub**: [github.com/palakharinkhede4](https://github.com/palakharinkhede4)
 - **Repository**: [github.com/palakharinkhede4/Voice-Finance-Buddy](https://github.com/palakharinkhede4/Voice-Finance-Buddy)
+
 

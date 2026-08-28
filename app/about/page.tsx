@@ -108,10 +108,11 @@ export default function AboutPage() {
     role: "AI Engineer & Full-Stack Developer",
     tagline: "Creator & Lead Architect of Voice Finance Buddy",
     bio: "Passionate about building autonomous agentic AI systems, real-time voice interfaces, and high-performance financial intelligence applications. Specializes in modern Next.js architectures, edge computing, LLM orchestration, and deterministic security guardrails.",
+    avatar: "/palak-harinkhede.jpg",
     linkedin: "https://www.linkedin.com/in/palakharinkhede/",
     github: "https://github.com/palakharinkhede4",
     repo: "https://github.com/palakharinkhede4/Voice-Finance-Buddy",
-    portfolio: "https://github.com/palakharinkhede4",
+    portfolio: "https://palakharinkhede4.github.io/",
     skills: [
       "Multi-Agent AI Orchestration",
       "Next.js 15 & React 19",
@@ -152,6 +153,16 @@ export default function AboutPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <a
+              href={ownerInfo.portfolio}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-200/80 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 transition hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+            >
+              <Globe className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden md:inline">Portfolio</span>
+            </a>
+
             <a
               href={ownerInfo.github}
               target="_blank"
@@ -220,6 +231,17 @@ export default function AboutPage() {
               </Link>
 
               <a
+                href={ownerInfo.portfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/30 px-4 py-2.5 text-xs sm:text-sm font-semibold text-emerald-800 dark:text-emerald-300 transition hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+              >
+                <Globe className="h-4 w-4" />
+                View Portfolio
+                <ExternalLink className="h-3 w-3 text-emerald-500" />
+              </a>
+
+              <a
                 href={ownerInfo.repo}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -267,49 +289,63 @@ export default function AboutPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            {/* Creator Bio Card */}
+            {/* Creator Bio Card with Real Profile Picture */}
             <div className="lg:col-span-8 theme-card rounded-2xl p-6 sm:p-8 space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
                 <div className="flex items-center gap-4">
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-2xl font-bold text-white shadow-lg">
-                    PH
-                    <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900">
-                      <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                  {/* Photo Container with glowing border and online badge */}
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={ownerInfo.avatar}
+                      alt={ownerInfo.name}
+                      className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover ring-2 ring-indigo-500/30 dark:ring-indigo-400/40 shadow-lg shadow-indigo-500/10"
+                    />
+                    <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900">
+                      <span className="h-2.5 w-2.5 rounded-full bg-white animate-pulse" />
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       {ownerInfo.name}
                       <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                         Lead Developer
                       </span>
                     </h3>
-                    <p className="text-xs sm:text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                    <p className="text-xs sm:text-sm font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5">
                       {ownerInfo.role}
                     </p>
-                    <p className="text-[11px] text-slate-400 dark:text-zinc-500">
+                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
                       {ownerInfo.tagline}
                     </p>
                   </div>
                 </div>
 
                 {/* Direct Connect Buttons */}
-                <div className="flex items-center gap-2 self-stretch sm:self-auto">
+                <div className="flex flex-wrap items-center gap-2 self-stretch sm:self-auto">
+                  <a
+                    href={ownerInfo.portfolio}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow transition hover:bg-emerald-500"
+                  >
+                    <Globe className="h-3.5 w-3.5" />
+                    Portfolio
+                  </a>
                   <a
                     href={ownerInfo.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl bg-[#0A66C2] px-4 py-2 text-xs font-semibold text-white shadow transition hover:bg-[#084e96]"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl bg-[#0A66C2] px-3.5 py-2 text-xs font-semibold text-white shadow transition hover:bg-[#084e96]"
                   >
                     <LinkedinIcon className="h-3.5 w-3.5" />
-                    Connect on LinkedIn
+                    LinkedIn
                   </a>
                   <a
                     href={ownerInfo.github}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-100 dark:bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-zinc-200 transition hover:bg-slate-200 dark:hover:bg-zinc-700"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-100 dark:bg-zinc-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-zinc-200 transition hover:bg-slate-200 dark:hover:bg-zinc-700"
                   >
                     <GithubIcon className="h-3.5 w-3.5" />
                     GitHub
@@ -348,6 +384,29 @@ export default function AboutPage() {
                 </h3>
 
                 <div className="space-y-2.5">
+                  {/* Portfolio */}
+                  <a
+                    href={ownerInfo.portfolio}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between rounded-xl border border-emerald-200/80 dark:border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 text-xs transition hover:border-emerald-500/40 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <Globe className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                          Personal Portfolio
+                        </div>
+                        <div className="text-[10px] text-slate-400 dark:text-zinc-500">
+                          palakharinkhede4.github.io
+                        </div>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-emerald-500" />
+                  </a>
+
                   {/* LinkedIn */}
                   <a
                     href={ownerInfo.linkedin}
@@ -416,34 +475,11 @@ export default function AboutPage() {
                     </div>
                     <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-indigo-500" />
                   </a>
-
-                  {/* Portfolio */}
-                  <a
-                    href={ownerInfo.portfolio}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center justify-between rounded-xl border border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-zinc-900/60 p-3 text-xs transition hover:border-indigo-500/40 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                        <Globe className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                          Developer Portfolio
-                        </div>
-                        <div className="text-[10px] text-slate-400 dark:text-zinc-500">
-                          Showcase & Works
-                        </div>
-                      </div>
-                    </div>
-                    <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-indigo-500" />
-                  </a>
                 </div>
               </div>
 
               <div className="rounded-xl border border-indigo-100 dark:border-indigo-500/10 bg-indigo-50/50 dark:bg-indigo-950/20 p-3 text-[11px] text-slate-600 dark:text-zinc-400 mt-4">
-                <span className="font-semibold text-indigo-700 dark:text-indigo-300">Open for Collaboration:</span> Connect on LinkedIn for AI/ML engineering, multi-agent architectures, or fintech innovations.
+                <span className="font-semibold text-indigo-700 dark:text-indigo-300">Open for Collaboration:</span> Connect on LinkedIn or visit portfolio for AI/ML engineering, multi-agent systems, or full-stack software development.
               </div>
             </div>
           </div>
@@ -940,6 +976,15 @@ export default function AboutPage() {
 
             <div className="flex items-center gap-2">
               <a
+                href={ownerInfo.portfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:bg-emerald-500"
+              >
+                <Globe className="h-3.5 w-3.5" />
+                Portfolio
+              </a>
+              <a
                 href={ownerInfo.repo}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -1008,6 +1053,9 @@ export default function AboutPage() {
             <Link href="/" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition">
               Dashboard
             </Link>
+            <a href={ownerInfo.portfolio} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+              Portfolio
+            </a>
             <a href={ownerInfo.github} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition">
               GitHub Profile
             </a>
