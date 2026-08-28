@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   TrendingUp,
   TrendingDown,
@@ -10,6 +11,7 @@ import {
   Wallet,
   Sun,
   Moon,
+  Info,
 } from "lucide-react";
 import { MarketIndex } from "@/lib/tools/market";
 
@@ -79,8 +81,18 @@ export const Header: React.FC<HeaderProps> = ({
           })}
         </div>
 
-        {/* Controls: Theme Toggle */}
+        {/* Controls: About Project & Theme Toggle */}
         <div className="flex items-center gap-2">
+          <Link
+            href="/about"
+            className="flex items-center gap-1.5 rounded-lg border border-indigo-200/80 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 shadow-sm transition hover:bg-indigo-100 dark:hover:bg-indigo-900/60"
+            title="Learn about Voice Finance Buddy, architecture, and creator"
+          >
+            <Info className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span className="hidden sm:inline">About Project</span>
+            <span className="sm:hidden">About</span>
+          </Link>
+
           <button
             onClick={onToggleTheme}
             title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}

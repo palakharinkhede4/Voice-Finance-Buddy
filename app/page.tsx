@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { Header } from "@/components/Header";
 import { KPICards } from "@/components/KPICards";
 import { SpendingCharts } from "@/components/SpendingCharts";
@@ -418,10 +419,23 @@ export default function Dashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200/80 dark:border-white/[0.06] bg-white dark:bg-[#0A0C13] py-3.5 text-center text-xs text-slate-500 dark:text-zinc-500 transition-colors">
+      <footer className="border-t border-slate-200/80 dark:border-white/[0.06] bg-white dark:bg-[#0A0C13] py-3.5 text-xs text-slate-500 dark:text-zinc-500 transition-colors">
         <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Voice Finance Buddy • Private & Secure Personal Finance Assistant</span>
-          <span>Designed for effortless money management</span>
+          <div className="flex items-center gap-4">
+            <Link href="/about" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+              About Project & Architecture
+            </Link>
+            <span>•</span>
+            <a
+              href="https://www.linkedin.com/in/palakharinkhede/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-slate-800 dark:hover:text-zinc-300 transition"
+            >
+              Created by Palak Harinkhede
+            </a>
+          </div>
         </div>
       </footer>
 

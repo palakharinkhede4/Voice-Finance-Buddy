@@ -103,6 +103,16 @@ Built with Next.js 15, TypeScript, Tailwind CSS, and Recharts. Deployable with 1
 - **UI Library**: React 19 + TypeScript
 - **Styling**: Tailwind CSS + Custom Obsidian Glass tokens
 - **Data Charts**: Recharts
-- **Iconography**: Lucide React (clean SVG vectors, zero amateur emojis)
+- **Iconography**: Lucide React (clean SVG vectors)
 - **Audio & Voice**: Web Speech API + Web MediaRecorder + Whisper API
 - **Deployment Platform**: Vercel Serverless & Edge Functions (100% Uptime, Zero Cold Sleeps)
+
+---
+
+## Creator & Architect
+
+- **Author**: **Palak Harinkhede**
+- **LinkedIn**: [linkedin.com/in/palakharinkhede](https://www.linkedin.com/in/palakharinkhede/)
+- **GitHub**: [github.com/palakharinkhede4](https://github.com/palakharinkhede4)
+- **Repository**: [github.com/palakharinkhede4/Voice-Finance-Buddy](https://github.com/palakharinkhede4/Voice-Finance-Buddy)
+
